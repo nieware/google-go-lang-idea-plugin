@@ -84,7 +84,7 @@ public class GoFoldingBuilder implements FoldingBuilder, DumbAware, GoElementTyp
     }
 
     public String getPlaceholderText(@NotNull ASTNode node) {
-        return "{ ... }";
+        return "{ ... }"; // TODO: "( ... )" for imports
     }
 
     public boolean isCollapsedByDefault(@NotNull ASTNode node) {

@@ -155,7 +155,8 @@ public class GoApplicationConfiguration extends ModuleBasedConfiguration<GoAppli
                     GoProjectSettings setting = GoProjectSettings.getInstance(module.getProject());
                     String compiledFileName;
                     if (setting.getState().BUILD_SYSTEM_TYPE == GoProjectSettings.BuildSystemType.Install) {
-                        compiledFileName = module.getProject().getBasePath() + "/bin/" + relativePath;
+                        //compiledFileName = module.getProject().getBasePath() + "/bin/" + relativePath;
+                        compiledFileName = module.getProject().getBasePath() + "/bin/" + file.getNameWithoutExtension();
                     }else{
                         compiledFileName = CompilerPaths.getModuleOutputPath(module, false)
                                                 + "/go-bins/" + relativePath + "/" + file.getNameWithoutExtension();

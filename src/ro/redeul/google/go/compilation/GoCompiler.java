@@ -387,6 +387,7 @@ public class GoCompiler implements TranslatingCompiler {
 
         GoSdkData sdkData = goSdkData(sdk);
 
+        // build the command line with parameters: go tool g6 -I baseOutputPath -o outputBinary
         GeneralCommandLine command = new GeneralCommandLine();
         command.setExePath(getGoToolBinary(sdk));
         command.addParameter("tool");
@@ -396,10 +397,12 @@ public class GoCompiler implements TranslatingCompiler {
         command.addParameter(baseOutputPath);
         command.addParameter("-o");
         command.addParameter(outputBinary);
+        // set environment for command
         command.setEnvParams(new HashMap<String, String>() {{
             put("GOROOT", sdk.getHomePath());
         }});
 
+        // add fileRelativePath as parameter if present
         for (VirtualFile file : targetDescription.getThird()) {
             String fileRelativePath = VfsUtil.getRelativePath(file, sourceRoot,
                                                               '/');
@@ -408,6 +411,7 @@ public class GoCompiler implements TranslatingCompiler {
             }
         }
 
+        //
         String executionPath = sourceRoot.getPath();
         CompilationTaskWorker compilationTaskWorker = new CompilationTaskWorker(
             new GoCompilerOutputStreamParser(executionPath));

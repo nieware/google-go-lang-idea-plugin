@@ -1,9 +1,17 @@
 package ro.redeul.google.go.compilation;
 
 import com.intellij.execution.configurations.GeneralCommandLine;
+import com.intellij.openapi.application.AccessToken;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompileScope;
+import com.intellij.openapi.compiler.CompilerMessageCategory;
 import com.intellij.openapi.compiler.TranslatingCompiler;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.Sdk;
@@ -17,12 +25,16 @@ import ro.redeul.google.go.config.sdk.GoSdkData;
 import ro.redeul.google.go.config.sdk.GoTargetOs;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 
 public class GoInstallCompiler implements TranslatingCompiler {
 
     Project project;
+
+    VirtualFile currentFile;
 
     public GoInstallCompiler(Project project) {
         this.project = project;
@@ -35,16 +47,40 @@ public class GoInstallCompiler implements TranslatingCompiler {
 
     @Override
     public void compile(CompileContext compileContext, Chunk<Module> moduleChunk, VirtualFile[] virtualFiles, OutputSink outputSink) {
-
         String basePath = compileContext.getProject().getBasePath();
+        Path srcPath = Paths.get(basePath+"/src");
         HashSet<String> packages = new HashSet<String>();
 
-        for (int i = 0; i < virtualFiles.length; i++) {
-            VirtualFile vf = virtualFiles[i];
-            String fullPath = vf.getParent().getPath();
-            String importPath = fullPath.substring(basePath.length() + 5);
-            packages.add(importPath);
-        }
+        // get the file currently open in the editor
+        // invokeAndWait is used to call getSelectedTextEditor from the event dispatch thread
+        ModalityState ms = ModalityState.NON_MODAL;
+        ApplicationManager.getApplication().invokeAndWait(new Runnable() {
+            public void run() {
+                try {
+                    //noinspection ConstantConditions
+                    Document currentDoc  = FileEditorManager.getInstance(project).getSelectedTextEditor().getDocument();
+                    currentFile = FileDocumentManager.getInstance().getFile(currentDoc);
+                } catch(Exception e) { /*ignore */ }
+            }
+        }, ms);
+
+        // we ignore the list of files we get and only use the current file
+        //for (VirtualFile currentFile : virtualFiles) {
+        Path fullPath = Paths.get(currentFile.getParent().getPath());
+        compileContext.addMessage(CompilerMessageCategory.INFORMATION, "fullPath: "+fullPath.toString(), null, -1, -1);
+        compileContext.addMessage(CompilerMessageCategory.INFORMATION, "srcPath:  "+srcPath.toString(), null, -1, -1);
+        try {
+            if(fullPath.startsWith(srcPath)) {
+                String importPath = fullPath.toString().substring(srcPath.toString().length()+1); // include final slash
+                packages.add(importPath);
+                compileContext.addMessage(CompilerMessageCategory.INFORMATION, "importPath "+importPath, null, -1, -1);
+            } else {
+                compileContext.addMessage(CompilerMessageCategory.WARNING, fullPath+" is not in the 'src' directory of the workspace", null, -1, -1);
+            }
+        } catch (IndexOutOfBoundsException e) { /* ignore */ }
+        //}
+
+        // build the command line
         GeneralCommandLine command = new GeneralCommandLine();
         final Sdk projectSdk = ProjectRootManager.getInstance(project).getProjectSdk();
         final GoSdkData goSdkData = (GoSdkData) projectSdk.getSdkAdditionalData();
@@ -58,10 +94,15 @@ public class GoInstallCompiler implements TranslatingCompiler {
         command.setWorkDirectory(basePath);
 
         HashMap<String, String> envparams = new HashMap<String, String>();
-        envparams.put("GOROOT", projectSdk.getHomePath());
-        envparams.put("GOPATH", project.getBasePath());
-
+        String GOROOT = projectSdk.getHomePath();
+        compileContext.addMessage(CompilerMessageCategory.INFORMATION, "Setting GOROOT to "+GOROOT, null, -1, -1);
+        envparams.put("GOROOT", GOROOT);
+        String GOPATH = project.getBasePath();
+        compileContext.addMessage(CompilerMessageCategory.INFORMATION, "Setting GOPATH to "+GOPATH, null, -1, -1);
+        envparams.put("GOPATH", GOPATH);
         command.setEnvParams(envparams);
+
+        compileContext.addMessage(CompilerMessageCategory.INFORMATION, "running cmd: "+command.getCommandLineString(), null, -1, -1);
 
         CompilationTaskWorker compilationTaskWorker = new CompilationTaskWorker(
                 new GoCompilerOutputStreamParser(basePath));
