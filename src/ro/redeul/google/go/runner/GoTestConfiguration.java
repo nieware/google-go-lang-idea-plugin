@@ -1,8 +1,5 @@
 package ro.redeul.google.go.runner;
 
-import java.util.Arrays;
-import java.util.Collection;
-
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.Executor;
 import com.intellij.execution.configurations.ModuleBasedConfiguration;
@@ -18,11 +15,14 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.WriteExternalException;
 import com.intellij.util.xmlb.XmlSerializer;
-import com.intellij.util.xmlb.annotations.Transient;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import ro.redeul.google.go.runner.ui.GoTestConfigurationEditorForm;
 import ro.redeul.google.go.runner.ui.properties.GoTestConsoleProperties;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.Collection;
 
 /**
  * Author: Toader Mihai Claudiu <mtoader@gmail.com>
@@ -36,16 +36,26 @@ public class GoTestConfiguration extends ModuleBasedConfiguration<GoApplicationM
         Test, Benchmark
     }
 
-    public String packageName;
-    public String packageDir;
-    public String filter;
+    public enum TestTargetType {
+        CWD, Package, File
+    }
+
+    public String envVars = "";
+    public String testRunnerArgs = "";
+    public TestTargetType testTargetType = TestTargetType.Package;
+    public String packageName = "";
+    public String packageDir = "";
+    public String testFile = "";
+    public String testArgs = "";
+    public String workingDir = "";
     public Type executeWhat = Type.Test;
-    public boolean useShortRun;
-    public boolean testBeforeBenchmark;
+    public String filter = "";
+    public boolean useShortRun = false;
+    public boolean testBeforeBenchmark = false;
+    public boolean goVetEnabled = false;
 
     public GoTestConfiguration(String name, Project project, GoTestConfigurationType configurationType) {
-        super(name, new GoApplicationModuleBasedConfiguration(project),
-              configurationType.getConfigurationFactories()[0]);
+        super(name, new GoApplicationModuleBasedConfiguration(project), configurationType.getConfigurationFactories()[0]);
     }
 
     @Override
@@ -61,30 +71,42 @@ public class GoTestConfiguration extends ModuleBasedConfiguration<GoApplicationM
     }
 
     @Override
-    @Transient
-    public void setModule(Module module) {
-        super.setModule(module);
-    }
-
-    @Override
     public void checkConfiguration() throws RuntimeConfigurationException {
         super.checkConfiguration();
 
-        if (getModule() == null)
-            throw new RuntimeConfigurationException("A module is required");
+        if (testTargetType.equals(TestTargetType.Package) &&
+                (packageName == null || packageName.isEmpty())) {
+            throw new RuntimeConfigurationException("Package name is required");
+        }
 
-        if (packageName == null || packageName.isEmpty())
-            throw new RuntimeConfigurationException("A package is required");
+        if (testTargetType.equals(TestTargetType.File) &&
+                (testFile.isEmpty() || (!testFile.isEmpty() && !testFile.contains("_test.go")))) {
+            throw new RuntimeConfigurationException("The selected file does not appear to be a test file");
+        }
+
+        if (!workingDir.isEmpty()) {
+            File dir = new File(workingDir);
+
+            if (!dir.exists()) {
+                throw new RuntimeConfigurationException("The selected application working directory does not appear to exist.");
+            }
+
+            if (!dir.isDirectory()) {
+                throw new RuntimeConfigurationException("The selected application working directory does not appear to be a directory.");
+            }
+        }
     }
 
+    @NotNull
     public SettingsEditor<? extends RunConfiguration> getConfigurationEditor() {
         return new GoTestConfigurationEditorForm(getProject());
     }
 
     public void readExternal(final Element element) throws InvalidDataException {
         PathMacroManager.getInstance(getProject()).expandPaths(element);
-        XmlSerializer.deserializeInto(this, element);
+        super.readExternal(element);
         readModule(element);
+        XmlSerializer.deserializeInto(this, element);
     }
 
     public void writeExternal(final Element element) throws WriteExternalException {
@@ -96,11 +118,11 @@ public class GoTestConfiguration extends ModuleBasedConfiguration<GoApplicationM
 
     public RunProfileState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment env)
             throws ExecutionException {
-        return new GoCommandLineState(new GoTestConsoleProperties(this, executor), env);
-    }
+        if (this.workingDir.isEmpty()) {
+            this.workingDir = getProject().getBaseDir().getCanonicalPath();
+        }
 
-    public Module getModule() {
-        return getConfigurationModule().getModule();
+        return new GoCommandLineState(new GoTestConsoleProperties(this, executor), env);
     }
 
     @Override

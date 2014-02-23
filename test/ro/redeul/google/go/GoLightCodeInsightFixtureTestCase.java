@@ -7,8 +7,10 @@ import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.testFramework.fixtures.LightCodeInsightFixtureTestCase;
+import org.junit.Ignore;
 import ro.redeul.google.go.lang.psi.GoFile;
 
+@Ignore
 public abstract class GoLightCodeInsightFixtureTestCase
     extends LightCodeInsightFixtureTestCase {
 
@@ -22,6 +24,12 @@ public abstract class GoLightCodeInsightFixtureTestCase
 
     protected GoFile parse(String fileText) {
         return (GoFile) myFixture.configureByText(GoFileType.INSTANCE, fileText);
+    }
+
+
+    @Override
+    protected String getTestDataPath() {
+        return testDataRoot + getTestDataRelativePath();
     }
 
     protected String getTestFileName() {

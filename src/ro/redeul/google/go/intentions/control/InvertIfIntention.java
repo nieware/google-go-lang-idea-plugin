@@ -3,7 +3,6 @@ package ro.redeul.google.go.intentions.control;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.IncorrectOperationException;
@@ -23,10 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static ro.redeul.google.go.lang.documentation.DocumentUtil.replaceElementWithText;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.findParentOfType;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isNodeOfType;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isWhiteSpaceNode;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isWhiteSpaceOrComment;
+import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.*;
 import static ro.redeul.google.go.util.EditorUtil.reformatPositions;
 import static ro.redeul.google.go.util.expression.FlipBooleanExpression.flip;
 
@@ -44,16 +40,12 @@ public class InvertIfIntention extends Intention {
 
         GoExpr condition = stmt.getExpression();
         GoBlockStatement thenBlock = stmt.getThenBlock();
-        if (condition == null || thenBlock == null ||
-            element.getTextOffset() >= thenBlock.getTextOffset()) {
-            return false;
-        }
+        return !(condition == null || thenBlock == null || element.getTextOffset() >= thenBlock.getTextOffset()) && stmt.getElseIfStatement() == null;
 
-        return stmt.getElseIfStatement() == null;
     }
 
     @Override
-    protected void processIntention(@NotNull PsiElement element, Project project, Editor editor)
+    protected void processIntention(@NotNull PsiElement element, Editor editor)
             throws IncorrectOperationException {
         GoIfStatement stmt = findParentOfType(element, GoIfStatement.class);
         if (stmt == null) {
@@ -157,11 +149,7 @@ public class InvertIfIntention extends Intention {
     }
 
     private static boolean isFunctionBlock(PsiElement element) {
-        if (element == null || !(element instanceof GoBlockStatement)) {
-            return false;
-        }
-
-        return element.getParent() instanceof GoFunctionDeclaration;
+        return !(element == null || !(element instanceof GoBlockStatement)) && element.getParent() instanceof GoFunctionDeclaration;
     }
 
     private static List<PsiElement> getSiblings(PsiElement element) {

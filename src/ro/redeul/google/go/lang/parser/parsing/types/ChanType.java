@@ -11,7 +11,7 @@ public class ChanType implements GoElementTypes {
     enum ChannelType {
         Bidirectional(TYPE_CHAN_BIDIRECTIONAL), Sending(TYPE_CHAN_SENDING), Receiving(TYPE_CHAN_RECEIVING);
 
-        public IElementType elementType;
+        public final IElementType elementType;
 
         ChannelType(IElementType elementType) {
             this.elementType = elementType;
@@ -26,7 +26,7 @@ public class ChanType implements GoElementTypes {
 
         PsiBuilder.Marker marker = builder.mark();
 
-        ChannelType type = null;
+        ChannelType type;
         if ( builder.getTokenType() == kCHAN ) {
             ParserUtils.getToken(builder, kCHAN);
 

@@ -1,12 +1,5 @@
 package ro.redeul.google.go.ide.structureview;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import javax.swing.*;
-
 import com.intellij.ide.structureView.StructureViewTreeElement;
 import com.intellij.ide.util.treeView.smartTree.TreeElement;
 import com.intellij.navigation.ItemPresentation;
@@ -24,20 +17,15 @@ import ro.redeul.google.go.lang.psi.declarations.GoConstDeclaration;
 import ro.redeul.google.go.lang.psi.declarations.GoVarDeclaration;
 import ro.redeul.google.go.lang.psi.expressions.GoExpr;
 import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralIdentifier;
-import ro.redeul.google.go.lang.psi.toplevel.GoFunctionDeclaration;
-import ro.redeul.google.go.lang.psi.toplevel.GoMethodDeclaration;
-import ro.redeul.google.go.lang.psi.toplevel.GoMethodReceiver;
-import ro.redeul.google.go.lang.psi.toplevel.GoTypeNameDeclaration;
-import ro.redeul.google.go.lang.psi.toplevel.GoTypeSpec;
-import ro.redeul.google.go.lang.psi.types.GoPsiType;
-import ro.redeul.google.go.lang.psi.types.GoPsiTypeInterface;
-import ro.redeul.google.go.lang.psi.types.GoPsiTypeName;
-import ro.redeul.google.go.lang.psi.types.GoPsiTypePointer;
-import ro.redeul.google.go.lang.psi.types.GoPsiTypeStruct;
+import ro.redeul.google.go.lang.psi.toplevel.*;
+import ro.redeul.google.go.lang.psi.types.*;
 import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructAnonymousField;
 import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructField;
 import ro.redeul.google.go.lang.psi.utils.GoFileUtils;
 import ro.redeul.google.go.lang.stubs.GoNamesCache;
+
+import javax.swing.*;
+import java.util.*;
 
 import static ro.redeul.google.go.lang.psi.processors.GoNamesUtil.isExportedName;
 import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.resolveSafely;
@@ -55,7 +43,7 @@ public class GoStructureViewElement implements StructureViewTreeElement, ItemPre
         this(makeElementInfo(element));
     }
 
-    GoStructureViewElement(ElementInfo info) {
+    private GoStructureViewElement(ElementInfo info) {
         this.info = info;
         children = info.getChildren();
     }
@@ -136,7 +124,7 @@ public class GoStructureViewElement implements StructureViewTreeElement, ItemPre
     private static abstract class ElementInfo {
         final PsiNamedElement element;
 
-        protected ElementInfo(PsiNamedElement element) {
+        ElementInfo(PsiNamedElement element) {
             this.element = element;
         }
 
@@ -399,7 +387,77 @@ public class GoStructureViewElement implements StructureViewTreeElement, ItemPre
         }
 
         List<PsiNamedElement> getMembers(GoTypeSpec typeSpec) {
-            return Collections.emptyList();
+            List<PsiNamedElement> members = new ArrayList<PsiNamedElement>();
+            members.addAll(getMethods(typeSpec));
+            return members;
+        }
+
+        protected void getMethodsInFile(List<PsiNamedElement> children, String name, GoFile file) {
+            for (GoMethodDeclaration md : file.getMethods()) {
+                GoMethodReceiver mr = md.getMethodReceiver();
+                if (mr == null) {
+                    continue;
+                }
+
+                GoPsiType type = mr.getType();
+                if (type instanceof GoPsiTypePointer) {
+                    type = ((GoPsiTypePointer) type).getTargetType();
+                }
+
+                if (type != null && name.equals(type.getName())) {
+                    children.add(md);
+                }
+            }
+        }
+
+        protected Collection<GoFile> getAllSamePackageFiles(GoFile goFile) {
+            String path = getFilePath(goFile);
+            if (path.isEmpty()) {
+                return Collections.singleton(goFile);
+            }
+
+            List<GoFile> files = new ArrayList<GoFile>();
+            String packageName = goFile.getPackageName();
+            GoNamesCache namesCache = GoNamesCache.getInstance(goFile.getProject());
+            for (GoFile file : namesCache.getFilesByPackageName(packageName)) {
+                if (path.equals(getFilePath(file))) {
+                    files.add(file);
+                }
+            }
+
+            if (files.isEmpty()) {
+                files.add(goFile);
+            }
+            return files;
+        }
+
+        protected String getFilePath(GoFile file) {
+            VirtualFile vf = file.getVirtualFile();
+            if (vf == null) {
+                return "";
+            }
+
+            VirtualFile parent = vf.getParent();
+            if (parent == null) {
+                return "";
+            }
+
+            return parent.getPath();
+        }
+
+        protected List<PsiNamedElement> getMethods(GoTypeSpec typeSpec) {
+            PsiFile file = typeSpec.getContainingFile();
+            String name = typeSpec.getName();
+            if (name == null || !(file instanceof GoFile)) {
+                return Collections.emptyList();
+            }
+
+            List<PsiNamedElement> children = new ArrayList<PsiNamedElement>();
+            for (GoFile f : getAllSamePackageFiles((GoFile) file)) {
+                getMethodsInFile(children, name, f);
+            }
+            Collections.sort(children, NAMED_ELEMENT_COMPARATOR);
+            return children;
         }
 
         @Override
@@ -435,74 +493,6 @@ public class GoStructureViewElement implements StructureViewTreeElement, ItemPre
             fields.addAll(getAnonymousFields(struct));
             Collections.sort(fields, NAMED_ELEMENT_COMPARATOR);
             return fields;
-        }
-
-        private List<PsiNamedElement> getMethods(GoTypeSpec typeSpec) {
-            PsiFile file = typeSpec.getContainingFile();
-            String name = typeSpec.getName();
-            if (name == null || !(file instanceof GoFile)) {
-                return Collections.emptyList();
-            }
-
-            List<PsiNamedElement> children = new ArrayList<PsiNamedElement>();
-            for (GoFile f : getAllSamePackageFiles((GoFile) file)) {
-                getMethodsInFile(children, name, f);
-            }
-            Collections.sort(children, NAMED_ELEMENT_COMPARATOR);
-            return children;
-        }
-
-        private Collection<GoFile> getAllSamePackageFiles(GoFile goFile) {
-            String path = getFilePath(goFile);
-            if (path.isEmpty()) {
-                return Collections.singleton(goFile);
-            }
-
-            List<GoFile> files = new ArrayList<GoFile>();
-            String packageName = goFile.getPackageName();
-            GoNamesCache namesCache = GoNamesCache.getInstance(goFile.getProject());
-            for (GoFile file : namesCache.getFilesByPackageName(packageName)) {
-                if (path.equals(getFilePath(file))) {
-                    files.add(file);
-                }
-            }
-
-            if (files.isEmpty()) {
-                files.add(goFile);
-            }
-            return files;
-        }
-
-        private String getFilePath(GoFile file) {
-            VirtualFile vf = file.getVirtualFile();
-            if (vf == null) {
-                return "";
-            }
-
-            VirtualFile parent = vf.getParent();
-            if (parent == null) {
-                return "";
-            }
-
-            return parent.getPath();
-        }
-
-        private void getMethodsInFile(List<PsiNamedElement> children, String name, GoFile file) {
-            for (GoMethodDeclaration md : file.getMethods()) {
-                GoMethodReceiver mr = md.getMethodReceiver();
-                if (mr == null) {
-                    continue;
-                }
-
-                GoPsiType type = mr.getType();
-                if (type instanceof GoPsiTypePointer) {
-                    type = ((GoPsiTypePointer) type).getTargetType();
-                }
-
-                if (type != null && name.equals(type.getName())) {
-                    children.add(md);
-                }
-            }
         }
 
         private List<PsiNamedElement> getAnonymousFields(GoPsiTypeStruct struct) {

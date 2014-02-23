@@ -1,7 +1,5 @@
 package ro.redeul.google.go.lang.parser.parsing.expressions;
 
-import java.util.regex.Pattern;
-
 import com.intellij.lang.PsiBuilder;
 import ro.redeul.google.go.GoBundle;
 import ro.redeul.google.go.lang.completion.GoCompletionContributor;
@@ -9,14 +7,17 @@ import ro.redeul.google.go.lang.lexer.GoTokenTypes;
 import ro.redeul.google.go.lang.parser.GoElementTypes;
 import ro.redeul.google.go.lang.parser.GoParser;
 import ro.redeul.google.go.lang.parser.parsing.util.ParserUtils;
+
+import java.util.regex.Pattern;
+
 import static ro.redeul.google.go.lang.parser.GoParser.ParsingFlag.AllowCompositeLiteral;
 import static ro.redeul.google.go.lang.parser.GoParser.ParsingFlag.ParseIota;
 import static ro.redeul.google.go.lang.parser.parsing.declarations.FunctionOrMethodDeclaration.parseCompleteMethodSignature;
 
-public class PrimaryExpression implements GoElementTypes {
+class PrimaryExpression implements GoElementTypes {
 
-    static Pattern BOOLEAN_LITERAL = Pattern.compile("true|false");
-    static Pattern IOTA_LITERAL = Pattern.compile("iota");
+    private static final Pattern BOOLEAN_LITERAL = Pattern.compile("true|false");
+    private static final Pattern IOTA_LITERAL = Pattern.compile("iota");
 
     /**
      * PrimaryExpr :=
@@ -89,7 +90,7 @@ public class PrimaryExpression implements GoElementTypes {
         //                          ->  TypeLit, TypeName  ->
         //                              '(' Type ')'
 
-        if (parseConstantLiteral(builder, parser))
+        if (parseConstantLiteral(builder))
             return true;
 
         if (ParserUtils.lookAhead(builder, kFUNC, pLPAREN)) {
@@ -190,14 +191,14 @@ public class PrimaryExpression implements GoElementTypes {
         return true;
     }
 
-    private static boolean parseLiteralFunction(PsiBuilder builder,
+    private static void parseLiteralFunction(PsiBuilder builder,
                                                 GoParser parser) {
 
         PsiBuilder.Marker mark = builder.mark();
 
         if (!ParserUtils.getToken(builder, kFUNC)) {
             mark.drop();
-            return false;
+            return;
         }
 
         parseCompleteMethodSignature(builder, parser);
@@ -205,8 +206,6 @@ public class PrimaryExpression implements GoElementTypes {
         parser.parseBody(builder);
 
         mark.done(LITERAL_FUNCTION);
-
-        return true;
     }
 
 
@@ -215,15 +214,20 @@ public class PrimaryExpression implements GoElementTypes {
                                              PsiBuilder.Marker mark) {
 
         ParserUtils.getToken(builder, pLBRACK);
-
+        boolean allowComposite = parser.resetFlag(AllowCompositeLiteral, true);
         parser.parseExpression(builder);
-
+        parser.resetFlag(AllowCompositeLiteral, allowComposite);
         boolean isSlice = false;
         if (builder.getTokenType() == oCOLON) {
             builder.advanceLexer();
             isSlice = true;
 
             parser.parseExpression(builder);
+
+            if (builder.getTokenType() == oCOLON) {
+                builder.advanceLexer();
+                parser.parseExpression(builder);
+            }
         }
 
         ParserUtils.getToken(builder, pRBRACK, "right.bracket.expected");
@@ -237,7 +241,7 @@ public class PrimaryExpression implements GoElementTypes {
     private static boolean parseCallOrConversion(PsiBuilder builder,
                                                  GoParser parser,
                                                  PsiBuilder.Marker mark) {
-
+        boolean allowComposite = parser.resetFlag(AllowCompositeLiteral, true);
         ParserUtils.getToken(builder, pLPAREN);
 
         if (builder.getTokenType() != pRPAREN) {
@@ -252,6 +256,7 @@ public class PrimaryExpression implements GoElementTypes {
         ParserUtils.getToken(builder, pRPAREN, "closed.parenthesis.expected");
 
         mark.done(CALL_OR_CONVERSION_EXPRESSION);
+        parser.resetFlag(AllowCompositeLiteral, allowComposite);
         return true;
     }
 
@@ -284,8 +289,7 @@ public class PrimaryExpression implements GoElementTypes {
         return true;
     }
 
-    private static boolean parseConstantLiteral(PsiBuilder builder,
-                                                GoParser parser) {
+    private static boolean parseConstantLiteral(PsiBuilder builder) {
         PsiBuilder.Marker expr = builder.mark();
 
         if (ParserUtils.markTokenIf(builder, LITERAL_STRING, litSTRING)) {

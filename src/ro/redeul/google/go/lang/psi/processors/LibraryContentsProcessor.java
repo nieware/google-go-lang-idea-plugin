@@ -1,11 +1,9 @@
 package ro.redeul.google.go.lang.psi.processors;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.ResolveState;
 import com.intellij.psi.scope.BaseScopeProcessor;
+import org.jetbrains.annotations.NotNull;
 import ro.redeul.google.go.lang.psi.GoFile;
 import ro.redeul.google.go.lang.psi.GoQualifiedNameElement;
 import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralString;
@@ -15,21 +13,24 @@ import ro.redeul.google.go.lang.psi.toplevel.GoTypeNameDeclaration;
 import ro.redeul.google.go.lang.psi.toplevel.GoTypeSpec;
 import ro.redeul.google.go.lang.psi.utils.GoPsiUtils;
 
-public class LibraryContentsProcessor extends BaseScopeProcessor {
+import java.util.ArrayList;
+import java.util.List;
 
-    private GoQualifiedNameElement qualifiedName;
+class LibraryContentsProcessor extends BaseScopeProcessor {
 
-    private List<Object> objects = new ArrayList<Object>();
+    private final GoQualifiedNameElement qualifiedName;
+
+    private final List<Object> objects = new ArrayList<Object>();
 
     public LibraryContentsProcessor(GoQualifiedNameElement qualifiedName) {
         this.qualifiedName = qualifiedName;
     }
 
-    public boolean execute(PsiElement element, ResolveState state) {
-        return tryTypeDeclaration(element, state);
+    public boolean execute(@NotNull PsiElement element, ResolveState state) {
+        return tryTypeDeclaration(element);
     }
 
-    private boolean tryTypeDeclaration(PsiElement element, ResolveState state) {
+    private boolean tryTypeDeclaration(PsiElement element) {
         if ( !(element instanceof GoTypeSpec) ) {
             return true;
         }

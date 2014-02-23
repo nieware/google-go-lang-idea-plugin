@@ -1,10 +1,6 @@
 package ro.redeul.google.go.ide;
 
-import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.ServiceManager;
-import com.intellij.openapi.components.State;
-import com.intellij.openapi.components.Storage;
-import com.intellij.openapi.components.StorageScheme;
+import com.intellij.openapi.components.*;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,7 +23,7 @@ public class GoProjectSettings implements PersistentStateComponent<GoProjectSett
         public boolean enableOptimizeImports = false;
     }
 
-    GoProjectSettingsBean bean;
+    private GoProjectSettingsBean bean;
 
     @Override
     @NotNull

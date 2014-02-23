@@ -1,6 +1,5 @@
 package ro.redeul.google.go;
 
-import com.intellij.facet.FacetManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
@@ -18,14 +17,14 @@ import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.TestFixtureBuilder;
 import org.junit.After;
 import org.junit.Before;
-import ro.redeul.google.go.config.facet.GoFacet;
-import ro.redeul.google.go.config.facet.GoFacetType;
+import org.junit.Ignore;
 import ro.redeul.google.go.config.sdk.GoSdkData;
 import ro.redeul.google.go.config.sdk.GoSdkType;
 
 import java.io.File;
 import java.lang.reflect.Method;
 
+@Ignore
 public abstract class GoTestCase<FixtureType extends IdeaProjectTestFixture> extends UsefulTestCase {
 
     protected FixtureType fixture;
@@ -136,12 +135,6 @@ public abstract class GoTestCase<FixtureType extends IdeaProjectTestFixture> ext
                 modificator.setVersionString("1");
                 modificator.setSdkAdditionalData(goSdkData);
                 modificator.commitChanges();
-
-                // add go module facet
-                FacetManager facetManager = FacetManager.getInstance(module);
-
-                GoFacet goFacet = facetManager.addFacet(new GoFacetType(), "go facet", null);
-                goFacet.getConfiguration().SDK_NAME = "go Sdk";
 
                 ContentEntry contentEntries[] = model.getContentEntries();
                 for (ContentEntry entry : contentEntries) {

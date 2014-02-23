@@ -46,41 +46,29 @@ public class MethodOrTypeNameResolver
     }
 
     @Override
-    public void visitLiteralIdentifier(GoLiteralIdentifier identifier) {
-        if (!(identifier.getParent() instanceof GoShortVarDeclaration))
-            return;
-
-        GoShortVarDeclaration varDeclaration = (GoShortVarDeclaration) identifier
-            .getParent();
-
-        GoLiteralIdentifier ids[] = varDeclaration.getIdentifiers();
-
-        for (GoLiteralIdentifier id : ids) {
-            if (id.isEquivalentTo(identifier)) {
-                if (checkReference(identifier)) {
-                    if (!addDeclaration(identifier)) {
-                        return;
-                    }
-                }
-            }
-        }
+    public void visitShortVarDeclaration(GoShortVarDeclaration declaration) {
+        GoLiteralIdentifier ids[] = declaration.getDeclarations();
+        checkIdentifiers(ids);
     }
 
-    private boolean checkVarDeclaration(GoLiteralIdentifier identifier,
-                                        GoShortVarDeclaration declaration) {
+    private boolean checkVarDeclaration(GoShortVarDeclaration declaration) {
         declaration.getIdentifiersType();
         return false;
     }
 
     @Override
     public void visitFunctionParameter(GoFunctionParameter parameter) {
-        if (parameter.getType() instanceof GoPsiTypeFunction) {
-            for (GoLiteralIdentifier identifier : parameter.getIdentifiers()) {
-                if (checkReference(identifier)) {
-                    if (!addDeclaration(identifier)) {
-                        return;
-                    }
-                }
+        if (!(parameter.getType() instanceof GoPsiTypeFunction)) {
+            return;
+        }
+
+        for (GoLiteralIdentifier identifier : parameter.getIdentifiers()) {
+            if (!checkReference(identifier)) {
+                continue;
+            }
+
+            if (!addDeclaration(identifier)) {
+                return;
             }
         }
     }

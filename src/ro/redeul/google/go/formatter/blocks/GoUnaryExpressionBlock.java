@@ -1,12 +1,9 @@
 package ro.redeul.google.go.formatter.blocks;
 
-import com.intellij.formatting.Alignment;
-import com.intellij.formatting.Block;
-import com.intellij.formatting.Indent;
-import com.intellij.formatting.Spacing;
-import com.intellij.formatting.Wrap;
+import com.intellij.formatting.*;
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
+import org.jetbrains.annotations.NotNull;
 
 class GoUnaryExpressionBlock extends GoBlock {
     public GoUnaryExpressionBlock(ASTNode node, Alignment alignment, Indent indent, Wrap wrap,
@@ -15,7 +12,7 @@ class GoUnaryExpressionBlock extends GoBlock {
     }
 
     @Override
-    public Spacing getSpacing(Block child1, Block child2) {
+    public Spacing getSpacing(Block child1, @NotNull Block child2) {
         return EMPTY_SPACING;
     }
 }

@@ -7,6 +7,7 @@ import ro.redeul.google.go.lang.lexer.GoTokenTypeSets;
 import ro.redeul.google.go.lang.parser.GoElementTypes;
 import ro.redeul.google.go.lang.parser.GoParser;
 import ro.redeul.google.go.lang.parser.parsing.util.ParserUtils;
+
 import static ro.redeul.google.go.lang.parser.GoParser.ParsingFlag.AllowCompositeLiteral;
 
 /**
@@ -14,7 +15,7 @@ import static ro.redeul.google.go.lang.parser.GoParser.ParsingFlag.AllowComposit
  * Date: Jul 25, 2010
  * Time: 8:01:22 PM
  */
-public class SwitchStatement implements GoElementTypes {
+class SwitchStatement implements GoElementTypes {
 
     public static IElementType parse(PsiBuilder builder, GoParser parser) {
 
@@ -28,8 +29,7 @@ public class SwitchStatement implements GoElementTypes {
         boolean allowCompositeLiteral =
             parser.resetFlag(AllowCompositeLiteral, false);
 
-        boolean isTypeSwitch = false;
-        boolean simpleStatementParsed = false;
+        boolean isTypeSwitch;
 
         PsiBuilder.Marker mark = builder.mark();
 
@@ -53,7 +53,6 @@ public class SwitchStatement implements GoElementTypes {
 
             PsiBuilder.Marker caseMark = builder.mark();
 
-            int position = builder.getCurrentOffset();
             if (ParserUtils.getToken(builder, kCASE)) {
                 if (isTypeSwitch) {
                     parser.parseTypeList(builder);

@@ -1,7 +1,5 @@
 package ro.redeul.google.go.lang.psi.resolve.references;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiReference;
@@ -13,6 +11,8 @@ import ro.redeul.google.go.lang.completion.GoCompletionContributor;
 import ro.redeul.google.go.lang.psi.processors.GoResolveStates;
 import ro.redeul.google.go.lang.psi.resolve.GoResolveResult;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public abstract class GoPsiReference<
     GoPsi extends PsiElement,
     GoPsiRefElement extends PsiElement,
@@ -22,20 +22,20 @@ public abstract class GoPsiReference<
 
     public static AtomicInteger counts = new AtomicInteger(0);
 
-    GoPsi element;
-    GoPsiRefElement reference;
-    ResolveCache.AbstractResolver<Reference, GoResolveResult> resolver;
+    final GoPsi element;
+    private final GoPsiRefElement reference;
+    private ResolveCache.AbstractResolver<Reference, GoResolveResult> resolver;
 
     protected abstract Reference self();
 
-    protected GoPsiReference(@NotNull GoPsi element,
-                             @NotNull GoPsiRefElement reference,
-                             @NotNull ResolveCache.AbstractResolver<Reference, GoResolveResult> resolver) {
+    GoPsiReference(@NotNull GoPsi element,
+                   @NotNull GoPsiRefElement reference,
+                   @NotNull ResolveCache.AbstractResolver<Reference, GoResolveResult> resolver) {
         this(element, reference);
         this.resolver = resolver;
     }
 
-    protected GoPsiReference(@NotNull GoPsi element, @NotNull GoPsiRefElement reference) {
+    GoPsiReference(@NotNull GoPsi element, @NotNull GoPsiRefElement reference) {
         this.element = element;
         this.reference = reference;
     }
@@ -47,15 +47,12 @@ public abstract class GoPsiReference<
     }
 
     @NotNull
-    public GoPsiRefElement getReferenceElement() {
+    GoPsiRefElement getReferenceElement() {
         return reference;
     }
 
     @Override
     public TextRange getRangeInElement() {
-        if (reference == null)
-            return new TextRange(0, 0);
-
         return reference.getTextRange().shiftRight(-element.getTextOffset());
     }
 
@@ -89,8 +86,8 @@ public abstract class GoPsiReference<
             GoBundle.message("error.not.implemented"));
     }
 
-    protected boolean matchesVisiblePackageName(PsiElement element,
-                                                String targetQualifiedName) {
+    boolean matchesVisiblePackageName(PsiElement element,
+                                      String targetQualifiedName) {
         String visiblePackageName =
             element.getUserData(GoResolveStates.VisiblePackageName);
 
@@ -101,19 +98,12 @@ public abstract class GoPsiReference<
     public boolean matchesVisiblePackageName(String currentPackageName,
                                                 PsiElement element,
                                                 String targetQualifiedName) {
-        String visiblePackageName =
-            element.getUserData(GoResolveStates.VisiblePackageName);
-
         String elementName = element.getText();
         if (currentPackageName == null)
             currentPackageName = "";
 
-        if ( matchesPackageName(currentPackageName, targetQualifiedName, elementName)) {
-            return true;
-        }
+        return matchesPackageName(currentPackageName, targetQualifiedName, elementName) || matchesPackageName(currentPackageName.toLowerCase(), targetQualifiedName, elementName);
 
-        return matchesPackageName(currentPackageName.toLowerCase(),
-                                  targetQualifiedName, elementName);
     }
 
     private boolean matchesPackageName(String currentPackageName, String targetQualifiedName, String elementName) {
@@ -133,16 +123,16 @@ public abstract class GoPsiReference<
         return elementName.equals(targetQualifiedName);
     }
 
-    public abstract static class Single<
+    abstract static class Single<
         GoPsi extends PsiElement,
         Reference extends Single<GoPsi, Reference>
     > extends GoPsiReference<GoPsi, GoPsi, Reference> {
 
-        protected Single(@NotNull GoPsi element, @NotNull ResolveCache.AbstractResolver<Reference, GoResolveResult> resolver) {
+        Single(@NotNull GoPsi element, @NotNull ResolveCache.AbstractResolver<Reference, GoResolveResult> resolver) {
             super(element, element, resolver);
         }
 
-        protected Single(@NotNull GoPsi element) {
+        Single(@NotNull GoPsi element) {
             super(element, element);
         }
     }

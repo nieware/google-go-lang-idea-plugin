@@ -1,7 +1,5 @@
 package ro.redeul.google.go.services;
 
-import java.util.concurrent.ConcurrentMap;
-
 import com.intellij.ProjectTopics;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -19,6 +17,8 @@ import org.jetbrains.annotations.NotNull;
 import ro.redeul.google.go.lang.psi.GoPsiElement;
 import ro.redeul.google.go.lang.psi.typing.GoType;
 
+import java.util.concurrent.ConcurrentMap;
+
 /**
  * Author: Toader Mihai Claudiu <mtoader@gmail.com>
  * <p/>
@@ -30,22 +30,19 @@ public class GoPsiManager {
     private static final Logger LOG = Logger.getInstance("ro.redeul.google.go.services.GoPsiManager");
 
     private final ConcurrentMap<GoPsiElement, GoType[]> myCalculatedTypes =
-        new ConcurrentWeakHashMap<GoPsiElement, GoType[]>();
+            new ConcurrentWeakHashMap<GoPsiElement, GoType[]>();
 
     private static final RecursionGuard ourGuard =
-        RecursionManager.createGuard("goPsiManager");
+            RecursionManager.createGuard("goPsiManager");
 
-    Project project;
-
-    public GoPsiManager(Project project) {
-        this.project = project;
+    private GoPsiManager(Project project) {
 
         ((PsiManagerEx) PsiManager.getInstance(project)).registerRunnableToRunOnAnyChange(new Runnable() {
             public void run() {
                 myCalculatedTypes.clear();
             }
         });
-        ((PsiManagerEx)PsiManager.getInstance(project)).registerRunnableToRunOnChange(new Runnable() {
+        ((PsiManagerEx) PsiManager.getInstance(project)).registerRunnableToRunOnChange(new Runnable() {
             public void run() {
                 myCalculatedTypes.clear();
             }

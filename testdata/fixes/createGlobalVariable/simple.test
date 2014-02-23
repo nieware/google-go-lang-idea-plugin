@@ -1,15 +1,16 @@
 package main
 
 func main() {
-    println(/*begin*/Foo/*end*/)
+	println(/*begin*/Foo/*end*/)
 }
+
 -----
 package main
 
 var (
-    Foo = value
+	Foo = value
 )
 
 func main() {
-    println(Foo<caret>)
+	println(Foo<caret>)
 }

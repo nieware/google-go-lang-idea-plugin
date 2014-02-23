@@ -1,7 +1,5 @@
 package ro.redeul.google.go.wizards;
 
-import java.util.List;
-
 import com.intellij.ide.util.newProjectWizard.ProjectNameStep;
 import com.intellij.ide.util.newProjectWizard.StepSequence;
 import com.intellij.ide.util.newProjectWizard.modes.WizardMode;
@@ -16,6 +14,8 @@ import ro.redeul.google.go.config.sdk.GoSdkType;
 import ro.redeul.google.go.ide.GoModuleBuilder;
 import ro.redeul.google.go.sdk.GoSdkUtil;
 
+import java.util.List;
+
 /**
  * Author: Toader Mihai Claudiu <mtoader@gmail.com>
  * <p/>
@@ -24,7 +24,7 @@ import ro.redeul.google.go.sdk.GoSdkUtil;
  */
 public class GoApplicationWizard extends WizardMode {
 
-    GoModuleBuilder goModuleBuilder;
+    private final GoModuleBuilder goModuleBuilder;
 
     public GoApplicationWizard() {
         goModuleBuilder = new GoModuleBuilder();
@@ -48,7 +48,7 @@ public class GoApplicationWizard extends WizardMode {
     }
 
     @Override
-    protected StepSequence createSteps(WizardContext context, ModulesProvider modulesProvider) {
+    protected StepSequence createSteps(@NotNull WizardContext context, @NotNull ModulesProvider modulesProvider) {
         StepSequence sequence = new StepSequence();
 
         ProjectWizardStepFactory factory = ProjectWizardStepFactory.getInstance();

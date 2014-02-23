@@ -1,10 +1,5 @@
 package ro.redeul.google.go.findUsages;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.intellij.codeInspection.LocalQuickFix;
 import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.psi.PsiElement;
@@ -22,21 +17,24 @@ import ro.redeul.google.go.lang.psi.expressions.GoExpr;
 import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteral;
 import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralFunction;
 import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralIdentifier;
-import ro.redeul.google.go.lang.psi.expressions.primary.GoCallOrConvExpression;
 import ro.redeul.google.go.lang.psi.expressions.primary.GoLiteralExpression;
 import ro.redeul.google.go.lang.psi.impl.GoPsiElementBase;
+import ro.redeul.google.go.lang.psi.statements.GoForWithRangeAndVarsStatement;
 import ro.redeul.google.go.lang.psi.statements.GoForWithRangeStatement;
 import ro.redeul.google.go.lang.psi.statements.GoShortVarDeclaration;
-import ro.redeul.google.go.lang.psi.toplevel.GoFunctionDeclaration;
-import ro.redeul.google.go.lang.psi.toplevel.GoFunctionParameter;
-import ro.redeul.google.go.lang.psi.toplevel.GoMethodDeclaration;
-import ro.redeul.google.go.lang.psi.toplevel.GoMethodReceiver;
-import ro.redeul.google.go.lang.psi.toplevel.GoTypeSpec;
+import ro.redeul.google.go.lang.psi.statements.switches.GoSwitchTypeClause;
+import ro.redeul.google.go.lang.psi.toplevel.*;
 import ro.redeul.google.go.lang.psi.types.GoPsiType;
 import ro.redeul.google.go.lang.psi.types.GoPsiTypeName;
 import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructField;
 import ro.redeul.google.go.lang.psi.utils.GoFileUtils;
 import ro.redeul.google.go.lang.psi.visitors.GoRecursiveElementVisitor;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isNodeOfType;
 
 public class GoVariableUsageStatVisitor extends GoRecursiveElementVisitor {
@@ -56,7 +54,7 @@ public class GoVariableUsageStatVisitor extends GoRecursiveElementVisitor {
         GoElementTypes.SELECT_COMM_CLAUSE_SEND
     );
 
-    private InspectionResult result;
+    private final InspectionResult result;
     private Context ctx;
 
     public GoVariableUsageStatVisitor(InspectionResult result) {
@@ -94,11 +92,6 @@ public class GoVariableUsageStatVisitor extends GoRecursiveElementVisitor {
                 ctx.unusedVariable(v);
             }
         }
-    }
-
-    @Override
-    public void visitCallOrConvExpression(GoCallOrConvExpression expression) {
-        super.visitCallOrConvExpression(expression);
     }
 
     @Override
@@ -145,9 +138,8 @@ public class GoVariableUsageStatVisitor extends GoRecursiveElementVisitor {
     public void visitForWithRange(GoForWithRangeStatement statement) {
         ctx.addNewScopeLevel();
 
-        boolean isDeclaration = statement.isDeclaration();
-        visitExpressionAsIdentifier(statement.getKey(), isDeclaration);
-        visitExpressionAsIdentifier(statement.getValue(), isDeclaration);
+        visitExpressionAsIdentifier(statement.getKey(), false);
+        visitExpressionAsIdentifier(statement.getValue(), false);
 
         visitElement(statement.getRangeExpression());
         visitElement(statement.getBlock());
@@ -157,6 +149,24 @@ public class GoVariableUsageStatVisitor extends GoRecursiveElementVisitor {
                 ctx.unusedVariable(v);
             }
         }
+    }
+
+    @Override
+    public void visitForWithRangeAndVars(GoForWithRangeAndVarsStatement statement) {
+        ctx.addNewScopeLevel();
+
+        visitLiteralIdentifier(statement.getKey());
+        visitLiteralIdentifier(statement.getValue());
+
+        visitElement(statement.getRangeExpression());
+        visitElement(statement.getBlock());
+
+        for (VariableUsage v : ctx.popLastScopeLevel().values()) {
+            if (!v.isUsed()) {
+                ctx.unusedVariable(v);
+            }
+        }
+
     }
 
     @Override
@@ -210,11 +220,8 @@ public class GoVariableUsageStatVisitor extends GoRecursiveElementVisitor {
     }
 
     private static boolean couldOpenNewScope(PsiElement element) {
-        if (!(element instanceof GoPsiElementBase)) {
-            return false;
-        }
+        return element instanceof GoPsiElementBase && isNodeOfType(element, NEW_SCOPE_STATEMENT);
 
-        return isNodeOfType(element, NEW_SCOPE_STATEMENT);
     }
 
     private void visitExpressionAsIdentifier(GoExpr expr, boolean declaration) {
@@ -252,8 +259,8 @@ public class GoVariableUsageStatVisitor extends GoRecursiveElementVisitor {
 
     /**
      * Check whether id is a field name in composite literals
-     * @param id
-     * @return
+     * @param id GoLiteralIdentifier
+     * @return boolean
      */
     private boolean isTypeFieldInitializer(GoLiteralIdentifier id) {
         if (!(id.getParent() instanceof GoLiteral)) {
@@ -328,7 +335,7 @@ public class GoVariableUsageStatVisitor extends GoRecursiveElementVisitor {
     }
 
 
-    private Map<String, VariableUsage> getFunctionParameters(GoFunctionDeclaration fd) {
+    private void getFunctionParameters(GoFunctionDeclaration fd) {
         Map<String, VariableUsage> variables = createFunctionParametersMap(fd.getParameters(), fd.getResults());
 
         if (fd instanceof GoMethodDeclaration) {
@@ -338,7 +345,6 @@ public class GoVariableUsageStatVisitor extends GoRecursiveElementVisitor {
                 variables.put(receiver.getName(), new VariableUsage(receiver));
             }
         }
-        return variables;
     }
 
     private Map<String, VariableUsage> createFunctionParametersMap(GoFunctionParameter[] parameters,
@@ -352,7 +358,7 @@ public class GoVariableUsageStatVisitor extends GoRecursiveElementVisitor {
     }
 
 
-    public void afterVisitGoFunctionDeclaration() {
+    void afterVisitGoFunctionDeclaration() {
         for (VariableUsage v : ctx.popLastScopeLevel().values()) {
             if (!v.isUsed()) {
                 ctx.unusedParameter(v);
@@ -419,7 +425,16 @@ public class GoVariableUsageStatVisitor extends GoRecursiveElementVisitor {
         }
 
         public boolean isDefinedInCurrentScope(GoPsiElement element) {
-            return variables.get(variables.size() - 1).containsKey(element.getText());
+            boolean isInCase = false;
+            PsiElement elem = element;
+            while (!(elem instanceof GoFile) && !isInCase) {
+                elem = elem.getParent();
+                if (elem instanceof GoSwitchTypeClause) {
+                    isInCase = true;
+                }
+            }
+
+            return variables.get(variables.size() - 1).containsKey(element.getText()) && !isInCase;
         }
 
         public void addDefinition(GoPsiElement element) {

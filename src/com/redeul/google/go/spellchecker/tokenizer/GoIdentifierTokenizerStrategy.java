@@ -1,8 +1,5 @@
 package com.redeul.google.go.spellchecker.tokenizer;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -14,6 +11,9 @@ import com.intellij.util.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralIdentifier;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GoIdentifierTokenizerStrategy extends SpellcheckingStrategy {
 
@@ -62,7 +62,7 @@ public class GoIdentifierTokenizerStrategy extends SpellcheckingStrategy {
       }
   }
 
-    public static final Tokenizer<GoLiteralIdentifier> GO_IDENTIFIER_TOKENIZER
+    private static final Tokenizer<GoLiteralIdentifier> GO_IDENTIFIER_TOKENIZER
         = new Tokenizer<GoLiteralIdentifier>() {
         @Override
         public void tokenize(@NotNull GoLiteralIdentifier element,
@@ -79,6 +79,10 @@ public class GoIdentifierTokenizerStrategy extends SpellcheckingStrategy {
             int offset = range.getStartOffset() - parent.getTextRange().getStartOffset();
             if(offset < 0 ) {
                 parent = PsiTreeUtil.findCommonParent(identifier, element);
+                if (parent == null) {
+                    return;
+                }
+
                 offset = range.getStartOffset() - parent.getTextRange().getStartOffset();
             }
             String text = identifier.getText();

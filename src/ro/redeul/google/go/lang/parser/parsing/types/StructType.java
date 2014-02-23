@@ -13,7 +13,7 @@ import ro.redeul.google.go.lang.parser.parsing.util.ParserUtils;
  * Date: Jul 25, 2010
  * Time: 2:52:27 AM
  */
-public class StructType implements GoElementTypes {
+class StructType implements GoElementTypes {
 
     public static IElementType parse(PsiBuilder builder, GoParser parser) {
 
@@ -54,7 +54,8 @@ public class StructType implements GoElementTypes {
         if ( identifiersCount == 1 &&
             (ParserUtils.lookAhead(builder, GoTokenTypeSets.EOS) ||
                 ParserUtils.lookAhead(builder, GoTokenTypeSets.litSTRING) ||
-                ParserUtils.lookAhead(builder, GoTokenTypeSets.oDOT))) {
+                ParserUtils.lookAhead(builder, GoTokenTypeSets.oDOT) ||
+                ParserUtils.lookAhead(builder, pRCURLY))) {
             fieldDeclaration.rollbackTo();
             fieldDeclaration = builder.mark();
             isAnonymous = true;

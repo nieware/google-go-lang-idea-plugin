@@ -4,6 +4,7 @@ import ro.redeul.google.go.lang.psi.GoPackageReference;
 import ro.redeul.google.go.lang.psi.GoQualifiedNameElement;
 import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralString;
 import ro.redeul.google.go.lang.psi.toplevel.GoImportDeclaration;
+
 import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.findDefaultPackageName;
 
 /**
@@ -35,11 +36,8 @@ public class GoResolveUtil {
         }
 
         // import x "a"; var x.T;
-        if ( importedPackageReference != null && elementReference != null && elementReference.getString().equals(importedPackageReference.getString())) {
-            return true;
-        }
+        return importedPackageReference != null && elementReference != null && elementReference.getString().equals(importedPackageReference.getString());
 
-        return false;
     }
 
 }

@@ -10,19 +10,20 @@ func main() {
 func Foo() {
     println(a + a)
 }
+
 -----
 package main
 
 const (
-    a     = 5
-    VALUE = a + a
+	a     = 5
+	VALUE = a + a
 )
 
 func main() {
-    println(VALUE)
-    println(VALUE)
+	println(VALUE)
+	println(VALUE)
 }
 
 func Foo() {
-    println(VALUE<caret>)
+	println(VALUE<caret>)
 }

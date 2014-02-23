@@ -10,12 +10,17 @@ import ro.redeul.google.go.lang.psi.expressions.GoExpr;
 import ro.redeul.google.go.lang.psi.expressions.binary.GoBinaryExpression;
 import ro.redeul.google.go.lang.psi.impl.expressions.GoExpressionBase;
 import ro.redeul.google.go.lang.psi.typing.GoType;
+import ro.redeul.google.go.lang.psi.visitors.GoElementVisitor;
 
 public abstract class GoBinaryExpressionImpl extends GoExpressionBase
-    implements GoBinaryExpression {
+        implements GoBinaryExpression {
 
-    public GoBinaryExpressionImpl(@NotNull ASTNode node) {
+    GoBinaryExpressionImpl(@NotNull ASTNode node) {
         super(node);
+    }
+
+    public void accept(GoElementVisitor visitor) {
+        visitor.visitBinaryExpression(this);
     }
 
     @Override
@@ -54,10 +59,17 @@ public abstract class GoBinaryExpressionImpl extends GoExpressionBase
         GoType[] leftTypes = leftOperand.getType();
         GoType[] rightTypes = rightOperand.getType();
 
-        if (leftTypes.length == 1 && rightTypes.length == 1) {
+        if (leftTypes.length == 1 && rightTypes.length == 1 && leftTypes[0] != null && rightTypes[0] != null) {
             if (leftTypes[0].isIdentical(rightTypes[0])) {
                 return leftTypes;
+            } else if (leftOperand.isConstantExpression()) {
+                return rightTypes;
+            } else if (rightOperand.isConstantExpression()) {
+                return leftTypes;
+            } else {
+                return leftTypes;
             }
+
         }
 
         return GoType.EMPTY_ARRAY;
@@ -69,7 +81,7 @@ public abstract class GoBinaryExpressionImpl extends GoExpressionBase
         GoExpr rightOperand = getRightOperand();
 
         return
-            leftOperand != null && leftOperand.isConstantExpression() &&
-                rightOperand != null && rightOperand.isConstantExpression();
+                leftOperand != null && leftOperand.isConstantExpression() &&
+                        rightOperand != null && rightOperand.isConstantExpression();
     }
 }

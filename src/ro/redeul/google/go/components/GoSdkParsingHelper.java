@@ -1,15 +1,7 @@
 package ro.redeul.google.go.components;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
@@ -33,6 +25,8 @@ import ro.redeul.google.go.lang.psi.GoFile;
 import ro.redeul.google.go.sdk.GoSdkUtil;
 import ro.redeul.google.go.util.GoUtil;
 
+import java.util.*;
+
 /**
  * Author: Toader Mihai Claudiu <mtoader@gmail.com>
  * <p/>
@@ -41,7 +35,7 @@ import ro.redeul.google.go.util.GoUtil;
  */
 public class GoSdkParsingHelper implements ApplicationComponent {
 
-    Map<Sdk, Map<String, String>> sdkPackageMappings = new HashMap<Sdk, Map<String, String>>();
+    private final Map<Sdk, Map<String, String>> sdkPackageMappings = new HashMap<Sdk, Map<String, String>>();
 
     public static GoSdkParsingHelper getInstance() {
         return ApplicationManager.getApplication().getComponent(GoSdkParsingHelper.class);
@@ -88,7 +82,7 @@ public class GoSdkParsingHelper implements ApplicationComponent {
         Sdk ownerSdk = null;
 
         VirtualFile ownerSdkRoot = null;
-        if (projectFileIndex.isInLibrarySource(virtualFile)) {
+        if (projectFileIndex.isInLibraryClasses(virtualFile)) {
             VirtualFile classPathRoot = projectFileIndex.getClassRootForFile(virtualFile);
 
             for (Sdk sdk : sdkList) {
@@ -125,9 +119,8 @@ public class GoSdkParsingHelper implements ApplicationComponent {
         return relativePath;
     }
 
-    private String getPackageImportPathFromProject(Project project, ProjectFileIndex projectIndex, VirtualFile virtualFile) {
+    private String getPackageImportPathFromProject(ProjectFileIndex projectIndex, VirtualFile virtualFile) {
 
-        Module module = projectIndex.getModuleForFile(virtualFile);
         VirtualFile contentRoot = projectIndex.getContentRootForFile(virtualFile);
         if ( contentRoot == null ) {
             return "";
@@ -138,10 +131,6 @@ public class GoSdkParsingHelper implements ApplicationComponent {
             return "";
         }
 
-        VirtualFile makefile = virtualFile.getParent().findChild("Makefile");
-        if ( makefile != null ) {
-
-        }
         return "";
     }
 

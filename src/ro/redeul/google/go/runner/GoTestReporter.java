@@ -4,11 +4,7 @@ import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessOutputTypes;
 import com.intellij.execution.testframework.sm.ServiceMessageBuilder;
 
-import static jetbrains.buildServer.messages.serviceMessages.ServiceMessageTypes.TEST_SUITE_FINISHED;
-import static jetbrains.buildServer.messages.serviceMessages.ServiceMessageTypes.TEST_SUITE_STARTED;
-import static jetbrains.buildServer.messages.serviceMessages.ServiceMessageTypes.TEST_STARTED;
-import static jetbrains.buildServer.messages.serviceMessages.ServiceMessageTypes.TEST_FINISHED;
-import static jetbrains.buildServer.messages.serviceMessages.ServiceMessageTypes.TEST_FAILED;
+import static jetbrains.buildServer.messages.serviceMessages.ServiceMessageTypes.*;
 
 /**
  * GoTestReporter reports test progress to Intellij IDEA via ServiceMessage.
@@ -17,7 +13,7 @@ class GoTestReporter {
     private static final String TEST_REPORTER_ATTACHED = "enteredTheMatrix";
     private static final String NAME = "name";
     private static final String DURATION = "duration";
-    public static final String LOCATION_HINT = "locationHint";
+    private static final String LOCATION_HINT = "locationHint";
 
     private final ProcessHandler handler;
     private final String packageDir;
@@ -57,7 +53,7 @@ class GoTestReporter {
         testSuiteStartingTime = System.currentTimeMillis();
     }
 
-    public void testSuiteFinished() {
+    void testSuiteFinished() {
         if (testSuiteName != null) {
             report(TEST_SUITE_FINISHED, testSuiteName, System.currentTimeMillis() - testSuiteStartingTime);
             testSuiteName = null;
@@ -85,7 +81,7 @@ class GoTestReporter {
         }
     }
 
-    public void testCaseFinished() {
+    void testCaseFinished() {
         if (testCaseName != null) {
             report(TEST_FINISHED, testCaseName, System.currentTimeMillis() - testCaseStartingTime);
             testCaseName = null;

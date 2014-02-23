@@ -1,17 +1,19 @@
 package ro.redeul.google.go.runner;
 
 import com.intellij.execution.Location;
-import com.intellij.execution.RunManagerEx;
-import com.intellij.execution.RunnerAndConfigurationSettings;
 import com.intellij.execution.actions.ConfigurationContext;
+import com.intellij.execution.actions.RunConfigurationProducer;
 import com.intellij.execution.configurations.ConfigurationFactory;
-import com.intellij.execution.junit.RuntimeConfigurationProducer;
+import com.intellij.execution.configurations.RunConfiguration;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.patterns.ElementPattern;
-import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
@@ -28,12 +30,11 @@ import ro.redeul.google.go.lang.psi.utils.GoFileUtils;
 import java.io.File;
 
 import static com.intellij.patterns.PlatformPatterns.psiElement;
-import static com.intellij.patterns.StandardPatterns.collection;
 import static com.intellij.patterns.StandardPatterns.string;
 
-public class GoTestConfigurationProducer extends RuntimeConfigurationProducer {
+public class GoTestConfigurationProducer extends RunConfigurationProducer {
 
-    PsiElement element;
+    private static final Logger LOG = Logger.getInstance(GoTestConfigurationProducer.class);
 
     public GoTestConfigurationProducer() {
         super(GoTestConfigurationType.getInstance());
@@ -44,112 +45,178 @@ public class GoTestConfigurationProducer extends RuntimeConfigurationProducer {
     }
 
     @Override
-    public PsiElement getSourceElement() {
-        return element;
+    public boolean isConfigurationFromContext(RunConfiguration configuration, ConfigurationContext context) {
+        if (configuration.getType() != getConfigurationType())
+            return false;
+
+        GoFile file = locationToFile(context.getLocation());
+        if (file == null || !file.getName().endsWith("_test.go")) {
+            return false;
+        }
+
+        PsiElement target = locationToTestFunction(context.getPsiLocation());
+        GoTestConfiguration testConfig = (GoTestConfiguration) configuration;
+
+        try {
+            VirtualFile virtualFile = file.getVirtualFile();
+            if (virtualFile == null)
+                return false;
+
+            Project project = file.getProject();
+            Module module = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(virtualFile);
+            GoApplicationModuleBasedConfiguration configurationModule = testConfig.getConfigurationModule();
+            String packageName = file.getPackageName();
+
+            if (!StringUtil.equals(testConfig.packageDir, file.getContainingDirectory().getVirtualFile().getCanonicalPath()) ||
+                    !StringUtil.equals(testConfig.workingDir, project.getBasePath()) ||
+                    !(testConfig.testTargetType == GoTestConfiguration.TestTargetType.Package) ||
+                    !(StringUtil.equals(packageName, file.getPackageName())) ||
+                    !(configurationModule != null && module != null && module.equals(configurationModule.getModule())))
+                return false;
+
+            if (target instanceof GoFile) {
+                GoTestConfiguration.Type executionMode =
+                        fileDirContainsTestsOfSamePackage(project, (GoFile) target)
+                                ? GoTestConfiguration.Type.Test
+                                : GoTestConfiguration.Type.Benchmark;
+
+                return testConfig.executeWhat == executionMode &&
+                        StringUtil.isEmptyOrSpaces(testConfig.filter);
+            } else if (target instanceof GoFunctionDeclaration) {
+
+                GoFunctionDeclaration function = (GoFunctionDeclaration) target;
+
+                if (!StringUtil.equals(testConfig.filter, "^" + function.getFunctionName() + "$"))
+                    return false;
+
+                if (FUNCTION_TEST.accepts(target))
+                    return testConfig.executeWhat == GoTestConfiguration.Type.Test;
+
+                if (FUNCTION_BENCHMARK.accepts(target))
+                    return testConfig.executeWhat == GoTestConfiguration.Type.Benchmark;
+            }
+
+            return false;
+        } catch (Exception ex) {
+            LOG.error(ex);
+        }
+
+        return false;
     }
 
     @Override
-    protected RunnerAndConfigurationSettings createConfigurationByElement(Location location, ConfigurationContext context) {
-        GoFile goFile = locationToFile(location);
+    protected boolean setupConfigurationFromContext(RunConfiguration configuration, ConfigurationContext context, Ref sourceElement) {
+        if (context.getPsiLocation() == null) {
+            return false;
+        }
 
-        if (goFile == null) return null;
+        PsiFile file = context.getPsiLocation().getContainingFile();
+        if (!(file instanceof GoFile)) {
+            return false;
+        }
 
-        VirtualFile virtualFile = goFile.getVirtualFile();
-        if (virtualFile == null)
-            return null;
+        if (!file.getName().endsWith("_test.go")) {
+            return false;
+        }
 
-        if (!virtualFile.getNameWithoutExtension().endsWith("_test"))
-            return null;
+        GoFile goFile = (GoFile) file;
+        PsiElement psiSourceElement = (PsiElement) sourceElement.get();
 
-        return createConfiguration(goFile, context.getModule(),
-                                   location.getPsiElement());
+        try {
+            VirtualFile virtualFile = file.getVirtualFile();
+            if (virtualFile == null) {
+                return false;
+            }
+
+            psiSourceElement = locationToTestFunction(psiSourceElement);
+
+            Project project = file.getProject();
+            Module module = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(virtualFile);
+            GoTestConfiguration testConfig = (GoTestConfiguration) configuration;
+
+            String packageName = goFile.getFullPackageName();
+            testConfig.packageName = packageName;
+            testConfig.packageDir = goFile.getContainingDirectory().getVirtualFile().getCanonicalPath();
+
+            testConfig.testTargetType = GoTestConfiguration.TestTargetType.Package;
+
+            if (psiSourceElement instanceof GoFile) {
+                configuration.setName(packageName);
+                // If there is any tests in current package, run in test mode.
+                // Otherwise run in benchmark mode.
+                if (fileDirContainsTestsOfSamePackage(project, (GoFile) psiSourceElement)) {
+                    testConfig.executeWhat = GoTestConfiguration.Type.Test;
+                } else {
+                    testConfig.executeWhat = GoTestConfiguration.Type.Benchmark;
+                }
+            } else if (FUNCTION_TEST.accepts(psiSourceElement)) {
+                String name = ((GoFunctionDeclaration) psiSourceElement).getName();
+                configuration.setName(packageName + "." + name);
+
+                testConfig.executeWhat = GoTestConfiguration.Type.Test;
+                testConfig.filter = "^" + name + "$";
+            } else if (FUNCTION_BENCHMARK.accepts(psiSourceElement)) {
+                String name = ((GoFunctionDeclaration) psiSourceElement).getName();
+                configuration.setName(packageName + "." + name);
+
+                testConfig.executeWhat = GoTestConfiguration.Type.Benchmark;
+                testConfig.filter = "^" + name + "$";
+            }
+
+            testConfig.workingDir = project.getBasePath();
+            testConfig.setModule(module);
+
+            return true;
+        } catch (Exception ex) {
+            LOG.error(ex);
+        }
+
+        return false;
     }
 
-    private static ElementPattern<GoFunctionDeclaration> FUNCTION_BENCHMARK =
-        psiElement(GoFunctionDeclaration.class)
-            .withParent(psiElement(GoFile.class))
-            .withChild(
-                psiElement(GoFunctionParameterList.class)
+    private static final ElementPattern<GoFunctionDeclaration> FUNCTION_BENCHMARK =
+            psiElement(GoFunctionDeclaration.class)
+                    .withParent(psiElement(GoFile.class))
                     .withChild(
-                        psiElement(GoFunctionParameter.class)
-                            .withChildren(
-                                collection(PsiElement.class)
-                                    .first(
-                                        psiElement(GoLiteralIdentifier.class))
-                                    .last(psiElement(GoPsiTypePointer.class)
-                                              .withText("*testing.B"))))
-                    .afterSibling(
-                        psiElement(GoLiteralIdentifier.class)
-                            .withText(string().matches("Benchmark.*"))));
+                            psiElement(GoFunctionParameterList.class)
+                                    .withChild(
+                                            psiElement(GoFunctionParameter.class)
+                                                    .withChild(
+                                                            psiElement(GoPsiTypePointer.class).withText("*testing.B")
+                                                    )
+                                    )
+                                    .afterSibling(
+                                            psiElement(GoLiteralIdentifier.class)
+                                                    .withText(string().matches("Benchmark.*"))));
 
-    private static ElementPattern<GoFunctionDeclaration> FUNCTION_TEST =
-        psiElement(GoFunctionDeclaration.class)
-            .withParent(psiElement(GoFile.class))
-            .withChild(
-                psiElement(GoFunctionParameterList.class)
+    private static final ElementPattern<GoFunctionDeclaration> FUNCTION_TEST =
+            psiElement(GoFunctionDeclaration.class)
+                    .withParent(psiElement(GoFile.class))
                     .withChild(
-                        psiElement(GoFunctionParameter.class)
-                            .withChildren(
-                                collection(PsiElement.class)
-                                    .first(
-                                        psiElement(GoLiteralIdentifier.class))
-                                    .last(psiElement(GoPsiTypePointer.class)
-                                              .withText("*testing.T"))))
-                    .afterSibling(
-                        psiElement(GoLiteralIdentifier.class)
-                            .withText(string().matches("Test.*"))));
+                            psiElement(GoFunctionParameterList.class)
+                                    .withChild(
+                                            psiElement(GoFunctionParameter.class)
+                                                    .withChild(
+                                                            psiElement(GoPsiTypePointer.class)
+                                                                    .withText("*testing.T")
+                                                    )
+                                    )
+                                    .afterSibling(
+                                            psiElement(GoLiteralIdentifier.class)
+                                                    .withText(string().matches("Test.*"))));
 
-    private RunnerAndConfigurationSettings createConfiguration(GoFile goFile, Module module, PsiElement element) {
-
-        final Project project = goFile.getProject();
-
-        RunnerAndConfigurationSettings settings =
-            RunManagerEx.getInstanceEx(project)
-                        .createConfiguration("", getConfigurationFactory());
-
-        GoTestConfiguration testConfiguration =
-            (GoTestConfiguration) settings.getConfiguration();
-
-        final PsiDirectory dir = goFile.getContainingDirectory();
-        if (dir == null)
+    private PsiElement locationToTestFunction(PsiElement location) {
+        if (location == null)
             return null;
 
-        while (!(element instanceof GoFile) &&
-            !FUNCTION_BENCHMARK.accepts(element) &&
-            !FUNCTION_TEST.accepts(element) ) {
-            element = element.getParent();
+        while (location != null &&
+                !FUNCTION_BENCHMARK.accepts(location) &&
+                !FUNCTION_TEST.accepts(location) &&
+                !(location instanceof GoFile)) {
+            location = location.getParent();
         }
 
-        this.element = element;
-
-        String dottedPackagePath = goFile.getPackageImportPath().replace('/', '.');
-        if (element instanceof GoFile) {
-            testConfiguration.setName(dottedPackagePath);
-            // If there is any tests in current package, run in test mode.
-            // Otherwise run in benchmark mode.
-            if (fileDirContainsTestsOfSamePackage(project, (GoFile) element)) {
-                testConfiguration.executeWhat = GoTestConfiguration.Type.Test;
-            } else {
-                testConfiguration.executeWhat = GoTestConfiguration.Type.Benchmark;
-            }
-        } else if (FUNCTION_TEST.accepts(element)) {
-            String name = ((GoFunctionDeclaration) element).getName();
-            testConfiguration.setName(dottedPackagePath + "." + name);
-            testConfiguration.executeWhat = GoTestConfiguration.Type.Test;
-            testConfiguration.filter = "^" + name +"$";
-        } else if (FUNCTION_BENCHMARK.accepts(element)) {
-            String name = ((GoFunctionDeclaration) element).getName();
-            testConfiguration.setName(dottedPackagePath + "." + name);
-            testConfiguration.executeWhat = GoTestConfiguration.Type.Benchmark;
-            testConfiguration.filter = "^" + name +"$";
-        }
-
-        testConfiguration.packageName = goFile.getPackageImportPath();
-        testConfiguration.packageDir = getGoFileDirRelativePath(goFile);
-        testConfiguration.setModule(module);
-        testConfiguration.useShortRun = false;
-
-        return settings;
+        return location;
     }
 
     private static boolean fileDirContainsTestsOfSamePackage(Project project, GoFile file) {
@@ -199,6 +266,23 @@ public class GoTestConfigurationProducer extends RuntimeConfigurationProducer {
         return pkg == null ? "" : pkg.getPackageName();
     }
 
+    private static String getPackageNameForTesting(GoFile file) {
+        String pkgName = file.getPackageImportPath();
+        if (pkgName.endsWith("_test")) {
+            String fileName = file.getName();
+            String testedFileName = fileName.replace("_test", "");
+            try {
+                GoFile testedFile = (GoFile) file.getParent().findFile(testedFileName);
+
+                return testedFile.getPackageImportPath();
+            } catch (NullPointerException ignored) {
+
+            }
+
+        }
+        return pkgName;
+    }
+
     private String getGoFileDirRelativePath(GoFile goFile) {
         VirtualFile vf = goFile.getVirtualFile();
         if (vf == null) {
@@ -213,6 +297,10 @@ public class GoTestConfigurationProducer extends RuntimeConfigurationProducer {
 
         String filePath = vf.getPath();
         String relativePath = FileUtil.getRelativePath(basePath, filePath, File.separatorChar);
+        if (relativePath == null) {
+            return "";
+        }
+
         return relativePath.replace(File.separatorChar, '/');
     }
 
@@ -225,11 +313,5 @@ public class GoTestConfigurationProducer extends RuntimeConfigurationProducer {
         }
 
         return (GoFile) file;
-    }
-
-
-    @Override
-    public int compareTo(Object o) {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 }

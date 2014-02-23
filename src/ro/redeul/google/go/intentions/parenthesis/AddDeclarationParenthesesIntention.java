@@ -2,7 +2,6 @@ package ro.redeul.google.go.intentions.parenthesis;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -10,9 +9,7 @@ import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
 import ro.redeul.google.go.intentions.Intention;
 
-import static ro.redeul.google.go.intentions.parenthesis.ParenthesisUtil.getDeclaration;
-import static ro.redeul.google.go.intentions.parenthesis.ParenthesisUtil.getRightParenthesis;
-import static ro.redeul.google.go.intentions.parenthesis.ParenthesisUtil.hasOnlyOneDeclaration;
+import static ro.redeul.google.go.intentions.parenthesis.ParenthesisUtil.*;
 import static ro.redeul.google.go.util.EditorUtil.reformatPositions;
 
 public class AddDeclarationParenthesesIntention extends Intention {
@@ -22,7 +19,7 @@ public class AddDeclarationParenthesesIntention extends Intention {
     }
 
     @Override
-    protected void processIntention(@NotNull PsiElement element, Project project, Editor editor)
+    protected void processIntention(@NotNull PsiElement element, Editor editor)
             throws IncorrectOperationException {
         PsiElement declaration = getDeclaration(element);
         TextRange range = declaration.getTextRange();

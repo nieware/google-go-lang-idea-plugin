@@ -1,7 +1,5 @@
 package ro.redeul.google.go.inspection;
 
-import java.util.Collection;
-
 import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.Project;
@@ -15,6 +13,9 @@ import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralString;
 import ro.redeul.google.go.lang.psi.toplevel.GoImportDeclaration;
 import ro.redeul.google.go.lang.psi.visitors.GoRecursiveElementVisitor;
 import ro.redeul.google.go.services.GoCodeManager;
+
+import java.util.Collection;
+
 import static ro.redeul.google.go.GoBundle.message;
 
 public class ImportDeclarationInspection extends AbstractWholeGoFileInspection {
@@ -27,8 +28,7 @@ public class ImportDeclarationInspection extends AbstractWholeGoFileInspection {
 
     @Override
     protected void doCheckFile(@NotNull GoFile file,
-                               @NotNull final InspectionResult result,
-                               boolean onTheFly) {
+                               @NotNull final InspectionResult result) {
         new GoRecursiveElementVisitor() {
             @Override
             public void visitFile(GoFile file) {
@@ -80,7 +80,7 @@ public class ImportDeclarationInspection extends AbstractWholeGoFileInspection {
             GoCodeManager.getInstance(project).findUnusedImports(file);
 
         for (GoImportDeclaration unused : unusedImports) {
-            if (!isValidImport(unused)) {
+            if (!unused.isValidImport()) {
                 continue;
             }
 
@@ -90,31 +90,5 @@ public class ImportDeclarationInspection extends AbstractWholeGoFileInspection {
                 ProblemHighlightType.LIKE_UNUSED_SYMBOL,
                 new RemoveImportFix(unused));
         }
-    }
-
-    public static boolean isValidImport(GoImportDeclaration declaration) {
-        if (declaration == null) {
-            return false;
-        }
-
-        String importPathValue = null;
-        GoLiteralString importPath = declaration.getImportPath();
-        if ( importPath != null ) {
-            importPathValue = importPath.getValue();
-        }
-
-        if (importPathValue == null || importPathValue.isEmpty()) {
-            return false;
-        }
-
-        if (importPathValue.contains(" ") || importPathValue.contains("\t")) {
-            return false;
-        }
-
-        if (importPathValue.contains("\\")) {
-            return false;
-        }
-
-        return true;
     }
 }

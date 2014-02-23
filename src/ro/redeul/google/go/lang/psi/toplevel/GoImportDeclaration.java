@@ -17,11 +17,13 @@ public interface GoImportDeclaration extends GoPsiElement {
     @Nullable
     GoPackageReference getPackageReference();
 
-    @NotNull
+    @Nullable
     GoLiteralString getImportPath();
 
     String getPackageName();
 
     @NotNull
     String getVisiblePackageName();
+
+    boolean isValidImport();
 }

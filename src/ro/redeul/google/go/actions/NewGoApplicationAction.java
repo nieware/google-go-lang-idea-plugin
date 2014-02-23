@@ -1,13 +1,11 @@
 package ro.redeul.google.go.actions;
 
-import com.intellij.facet.FacetManager;
 import com.intellij.ide.IdeView;
 import com.intellij.ide.actions.CreateFileFromTemplateDialog;
 import com.intellij.ide.actions.CreateTemplateInPackageAction;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.LangDataKeys;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
@@ -18,23 +16,22 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 import ro.redeul.google.go.GoBundle;
 import ro.redeul.google.go.GoFileType;
 import ro.redeul.google.go.GoIcons;
-import ro.redeul.google.go.config.facet.GoFacetType;
-import ro.redeul.google.go.lang.psi.GoFile;
 
 import static ro.redeul.google.go.actions.GoTemplatesFactory.Template;
 
-public class NewGoApplicationAction extends CreateTemplateInPackageAction<GoFile>
+public class NewGoApplicationAction extends CreateTemplateInPackageAction<PsiElement>
     implements DumbAware {
 
     public NewGoApplicationAction() {
-        super(GoBundle.message("new.go.app"), GoBundle.message("new.go.app.description"), GoIcons.GO_ICON_16x16, true);
+        super(GoBundle.message("new.go.app"), GoBundle.message("new.go.app.description"), GoIcons.GO_ICON_16x16, JavaModuleSourceRootTypes.SOURCES);
     }
 
     @Override
-    protected PsiElement getNavigationElement(@NotNull GoFile file) {
+    protected PsiElement getNavigationElement(@NotNull PsiElement file) {
         return file;
     }
 
@@ -61,7 +58,6 @@ public class NewGoApplicationAction extends CreateTemplateInPackageAction<GoFile
     protected boolean isAvailable(DataContext dataContext) {
         return
                 super.isAvailable(dataContext)
-                        // && hasGoFacet(DataKeys.MODULE.getData(dataContext))
                         && isNotIsSourceRoot(dataContext);
     }
 
@@ -91,11 +87,7 @@ public class NewGoApplicationAction extends CreateTemplateInPackageAction<GoFile
         return false;
     }
 
-    private boolean hasGoFacet(Module module) {
-        return FacetManager.getInstance(module).getFacetByType(GoFacetType.GO_FACET_TYPE_ID) != null;
-    }
-
-    protected void doCheckCreate(PsiDirectory dir, String className, String templateName) throws IncorrectOperationException {
+    protected void doCheckCreate(PsiDirectory dir, String className) throws IncorrectOperationException {
         // check to see if a file with the same name already exists
         PsiFile files[] = dir.getFiles();
         for (PsiFile file : files) {
@@ -107,7 +99,7 @@ public class NewGoApplicationAction extends CreateTemplateInPackageAction<GoFile
     }
 
     @Override
-    protected GoFile doCreate(PsiDirectory dir, String fileName, String templateName) throws IncorrectOperationException {
+    protected PsiElement doCreate(PsiDirectory dir, String fileName, String templateName) throws IncorrectOperationException {
 
         Template template = Template.GoFile;
 
@@ -131,11 +123,11 @@ public class NewGoApplicationAction extends CreateTemplateInPackageAction<GoFile
 //        builder.addKind("Helper file", GoIcons.GO_ICON_16x16, "helper");
     }
 
-    private boolean isLibraryFolder(PsiDirectory directory) {
+    private boolean isLibraryFolder() {
         return false;
     }
 
-    private boolean isApplicationFolder(PsiDirectory directory) {
+    private boolean isApplicationFolder() {
         return false;
     }
 

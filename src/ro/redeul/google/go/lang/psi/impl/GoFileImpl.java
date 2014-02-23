@@ -1,7 +1,5 @@
 package ro.redeul.google.go.lang.psi.impl;
 
-import java.util.Collection;
-
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.extapi.psi.PsiFileBase;
 import com.intellij.openapi.diagnostic.Logger;
@@ -10,10 +8,7 @@ import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.FileViewProvider;
-import com.intellij.psi.PsiDirectory;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.ResolveState;
+import com.intellij.psi.*;
 import com.intellij.psi.scope.PsiScopeProcessor;
 import com.intellij.psi.search.GlobalSearchScopes;
 import com.intellij.psi.tree.IElementType;
@@ -29,16 +24,14 @@ import ro.redeul.google.go.lang.psi.GoPsiElement;
 import ro.redeul.google.go.lang.psi.declarations.GoConstDeclarations;
 import ro.redeul.google.go.lang.psi.declarations.GoVarDeclarations;
 import ro.redeul.google.go.lang.psi.processors.GoResolveStates;
-import ro.redeul.google.go.lang.psi.toplevel.GoFunctionDeclaration;
-import ro.redeul.google.go.lang.psi.toplevel.GoImportDeclarations;
-import ro.redeul.google.go.lang.psi.toplevel.GoMethodDeclaration;
-import ro.redeul.google.go.lang.psi.toplevel.GoPackageDeclaration;
-import ro.redeul.google.go.lang.psi.toplevel.GoTypeDeclaration;
+import ro.redeul.google.go.lang.psi.toplevel.*;
 import ro.redeul.google.go.lang.psi.visitors.GoElementVisitor;
 import ro.redeul.google.go.lang.psi.visitors.GoElementVisitorWithData;
 import ro.redeul.google.go.lang.stubs.GoNamesCache;
 import ro.redeul.google.go.util.GoUtil;
 import ro.redeul.google.go.util.LookupElementUtil;
+
+import java.util.Collection;
 
 public class GoFileImpl extends PsiFileBase implements GoFile {
 
@@ -121,6 +114,23 @@ public class GoFileImpl extends PsiFileBase implements GoFile {
 
     public GoPackageDeclaration getPackage() {
         return findChildByClass(GoPackageDeclaration.class);
+    }
+
+    @Override
+    public String getFullPackageName() { // HACK having to do with package names
+        PsiDirectory parent = this.getContainingDirectory();
+        if (parent == null) {
+            return getPackageName();
+        }
+        String packageDir = parent.getVirtualFile().getCanonicalPath();
+        if (packageDir == null){
+            return getPackageName();
+        }
+        if (!packageDir.contains("/src/")) {
+            return getPackageName();
+        }
+        int begin = packageDir.lastIndexOf("/src/") + 5;
+        return packageDir.substring(begin);
     }
 
     public GoImportDeclarations[] getImportDeclarations() {
@@ -230,8 +240,6 @@ public class GoFileImpl extends PsiFileBase implements GoFile {
                                        @NotNull PsiElement place) {
         if (lastParent == this)
             return false;
-
-        String myPackageName = getPackage().getPackageName();
 
         PsiElement child = this.getLastChild();
 

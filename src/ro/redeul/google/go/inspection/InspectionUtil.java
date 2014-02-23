@@ -6,13 +6,13 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import ro.redeul.google.go.GoBundle;
 import ro.redeul.google.go.lang.parser.GoElementTypes;
+import ro.redeul.google.go.lang.psi.GoPsiElement;
 import ro.redeul.google.go.lang.psi.declarations.GoVarDeclaration;
 import ro.redeul.google.go.lang.psi.expressions.GoExpr;
+import ro.redeul.google.go.lang.psi.expressions.GoUnaryExpression;
 import ro.redeul.google.go.lang.psi.expressions.binary.GoBinaryExpression;
 import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralIdentifier;
-import ro.redeul.google.go.lang.psi.expressions.primary.GoCallOrConvExpression;
-import ro.redeul.google.go.lang.psi.expressions.primary.GoLiteralExpression;
-import ro.redeul.google.go.lang.psi.expressions.primary.GoTypeAssertionExpression;
+import ro.redeul.google.go.lang.psi.expressions.primary.*;
 import ro.redeul.google.go.lang.psi.toplevel.GoFunctionDeclaration;
 import ro.redeul.google.go.lang.psi.toplevel.GoFunctionParameter;
 
@@ -24,18 +24,24 @@ public class InspectionUtil {
     public static TextRange getProblemRange(ProblemDescriptor pd) {
         int start = pd.getStartElement().getTextOffset();
         int end = pd.getEndElement().getTextOffset() + pd.getEndElement()
-                                                         .getTextLength();
+                .getTextLength();
         return new TextRange(start, end);
     }
 
     public static final int UNKNOWN_COUNT = -1;
+    public static final int VARIADIC_COUNT = -2;
 
     public static int getExpressionResultCount(GoExpr call) {
-        if (call instanceof GoLiteralExpression || call instanceof GoBinaryExpression) {
+        if (call instanceof GoLiteralExpression
+                || call instanceof GoBinaryExpression
+                || (call instanceof GoUnaryExpression && ((GoUnaryExpression) call).getUnaryOp() != GoUnaryExpression.Op.Channel)
+                || call instanceof GoParenthesisedExpression
+                || call instanceof GoSelectorExpression
+                ) {
             return 1;
         } else if (call instanceof GoTypeAssertionExpression) {
             return getTypeAssertionResultCount(
-                (GoTypeAssertionExpression) call);
+                    (GoTypeAssertionExpression) call);
         } else if (call instanceof GoCallOrConvExpression) {
             return getFunctionResultCount((GoCallOrConvExpression) call);
         }
@@ -43,7 +49,7 @@ public class InspectionUtil {
         return UNKNOWN_COUNT;
     }
 
-    public static int getTypeAssertionResultCount(GoTypeAssertionExpression expression) {
+    private static int getTypeAssertionResultCount(GoTypeAssertionExpression expression) {
         PsiElement parent = expression.getParent();
         if (isNodeOfType(parent, GoElementTypes.ASSIGN_STATEMENT)) {
             // TODO: get expressions and identifiers of assign statement
@@ -65,7 +71,7 @@ public class InspectionUtil {
         return 1;
     }
 
-    public static int getFunctionResultCount(GoCallOrConvExpression call) {
+    private static int getFunctionResultCount(GoCallOrConvExpression call) {
         GoFunctionDeclaration function = resolveToFunctionDeclaration(call);
         return function == null ? UNKNOWN_COUNT : getFunctionResultCount(function);
     }
@@ -89,7 +95,7 @@ public class InspectionUtil {
         for (GoFunctionParameter p : function.getParameters()) {
             count += Math.max(p.getIdentifiers().length, 1);
             if (p.isVariadic()) {
-                return UNKNOWN_COUNT;
+                return VARIADIC_COUNT;
             }
         }
         return count;
@@ -101,7 +107,7 @@ public class InspectionUtil {
             if (count != UNKNOWN_COUNT && count != 1) {
                 String text = expr.getText();
                 if (expr instanceof GoCallOrConvExpression) {
-                    GoLiteralIdentifier id = getCallFunctionIdentifier((GoCallOrConvExpression) expr);
+                    GoPsiElement id = getCallFunctionIdentifier((GoCallOrConvExpression) expr);
                     if (id == null) {
                         continue;
                     }
@@ -109,9 +115,9 @@ public class InspectionUtil {
                 }
 
                 String msg = GoBundle.message(
-                    "error.multiple.value.in.single.value.context", text);
+                        "error.multiple.value.in.single.value.context", text);
                 result.addProblem(expr, msg,
-                                  ProblemHighlightType.GENERIC_ERROR);
+                        ProblemHighlightType.GENERIC_ERROR);
             }
         }
     }

@@ -1,28 +1,26 @@
 package ro.redeul.google.go.options;
 
-import java.io.File;
-
 import com.intellij.codeInsight.CodeInsightSettings;
 import com.intellij.openapi.application.PathManager;
-import com.intellij.openapi.components.ExportableComponent;
-import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.ServiceManager;
-import com.intellij.openapi.components.State;
-import com.intellij.openapi.components.Storage;
+import com.intellij.openapi.components.*;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
 import ro.redeul.google.go.GoBundle;
+
+import java.io.File;
 
 @State(
     name="GoogleGoSettings",
     storages= {
         @Storage(
-            file = "$APP_CONFIG$/editor.codeinsight.xml"
+            file = "$APP_CONFIG$/settings.golang.xml"
         )}
 )
 public class GoSettings implements PersistentStateComponent<GoSettings>, ExportableComponent {
     public boolean SHOW_IMPORT_POPUP = true;
     public boolean OPTIMIZE_IMPORTS_ON_THE_FLY = true;
+    public String goRoot = "";
+    public String goPath = "";
 
     public GoSettings() {
         CodeInsightSettings codeInsightSettings = CodeInsightSettings.getInstance();

@@ -1,7 +1,5 @@
 package ro.redeul.google.go.inspection.fix;
 
-import java.io.IOException;
-
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.codeInspection.LocalQuickFix;
@@ -21,9 +19,11 @@ import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import ro.redeul.google.go.GoBundle;
 
+import java.io.IOException;
+
 public class RepackageFileFix implements IntentionAction, LocalQuickFix {
 
-    private VirtualFile rootPath;
+    private final VirtualFile rootPath;
     private final String targetPackage;
 
     /**
@@ -69,13 +69,14 @@ public class RepackageFileFix implements IntentionAction, LocalQuickFix {
     @Override
     public final boolean isAvailable(@NotNull Project project, Editor editor, PsiFile file) {
         if (!rootPath.isValid() || !rootPath.isDirectory()) return false;
+
         if (!file.isValid()) return false;
+
         VirtualFile vFile = file.getVirtualFile();
         if (vFile == null) return false;
-        final VirtualFile parent = vFile.getParent();
-        if (parent == null) return false;
 
-        return true;
+        final VirtualFile parent = vFile.getParent();
+        return parent != null;
     }
 
 
@@ -83,6 +84,10 @@ public class RepackageFileFix implements IntentionAction, LocalQuickFix {
     public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
         VirtualFile vFile = file.getVirtualFile();
         Document document = PsiDocumentManager.getInstance(project).getDocument(file);
+        if (document == null) {
+            return;
+        }
+
         FileDocumentManager.getInstance().saveDocument(document);
         try {
             VirtualFile targetFolder = VfsUtil.createDirectoryIfMissing(rootPath, targetPackage);

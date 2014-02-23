@@ -1,9 +1,5 @@
 package ro.redeul.google.go.lang.documentation;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.util.text.StringUtil;
@@ -18,20 +14,19 @@ import ro.redeul.google.go.lang.psi.declarations.GoConstDeclarations;
 import ro.redeul.google.go.lang.psi.declarations.GoVarDeclaration;
 import ro.redeul.google.go.lang.psi.declarations.GoVarDeclarations;
 import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralIdentifier;
-import ro.redeul.google.go.lang.psi.toplevel.GoFunctionDeclaration;
-import ro.redeul.google.go.lang.psi.toplevel.GoFunctionParameter;
-import ro.redeul.google.go.lang.psi.toplevel.GoMethodDeclaration;
-import ro.redeul.google.go.lang.psi.toplevel.GoTypeDeclaration;
-import ro.redeul.google.go.lang.psi.toplevel.GoTypeNameDeclaration;
-import ro.redeul.google.go.lang.psi.toplevel.GoTypeSpec;
+import ro.redeul.google.go.lang.psi.toplevel.*;
 import ro.redeul.google.go.lang.psi.types.GoPsiType;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isNewLineNode;
 import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isNodeOfType;
 
 public class DocumentUtil {
 
-    public static String getTailingDocumentOfElement(PsiElement element) {
+    private static String getTailingDocumentOfElement(PsiElement element) {
         boolean foundNewLine = false;
         List<String> comments = new ArrayList<String>();
         while ((element = element.getNextSibling()) != null) {
@@ -52,7 +47,7 @@ public class DocumentUtil {
         return StringUtil.join(comments, "\n");
     }
 
-    public static String getHeaderDocumentOfElement(PsiElement element) {
+    private static String getHeaderDocumentOfElement(PsiElement element) {
         boolean foundNewLine = false;
         List<String> comments = new ArrayList<String>();
         while ((element = element.getPrevSibling()) != null) {
@@ -73,7 +68,7 @@ public class DocumentUtil {
         return StringUtil.join(comments, "\n");
     }
 
-    public static String getCommentText(PsiElement comment) {
+    private static String getCommentText(PsiElement comment) {
         String text = comment.getText().trim();
         if (text.startsWith("//")) {
             return text.substring(2);
@@ -189,7 +184,7 @@ public class DocumentUtil {
         return doc;
     }
 
-    public static String getElementPackageInfo(PsiElement element) {
+    private static String getElementPackageInfo(PsiElement element) {
         PsiFile file = element.getContainingFile();
 
         if (!(file instanceof GoFile)) {

@@ -8,9 +8,9 @@ import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralIdentifier;
 import ro.redeul.google.go.lang.psi.expressions.primary.GoSelectorExpression;
 import ro.redeul.google.go.lang.psi.resolve.GoResolveResult;
 import ro.redeul.google.go.lang.psi.types.GoPsiTypeStruct;
-import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructPromotedFields;
 import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructAnonymousField;
 import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructField;
+import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructPromotedFields;
 import ro.redeul.google.go.lang.psi.typing.GoType;
 import ro.redeul.google.go.lang.psi.typing.GoTypeStruct;
 
@@ -26,7 +26,7 @@ public class SelectorOfStructFieldReference
     private static final ResolveCache.AbstractResolver<SelectorOfStructFieldReference, GoResolveResult> RESOLVER =
         new ResolveCache.AbstractResolver<SelectorOfStructFieldReference, GoResolveResult>() {
             @Override
-            public GoResolveResult resolve(SelectorOfStructFieldReference psiReference, boolean incompleteCode) {
+            public GoResolveResult resolve(@NotNull SelectorOfStructFieldReference psiReference, boolean incompleteCode) {
 
                 GoTypeStruct typeStruct = psiReference.resolveTypeDefinition();
 
@@ -77,13 +77,13 @@ public class SelectorOfStructFieldReference
         GoTypeStructPromotedFields promotedFields = type.getPromotedFields();
         for (GoLiteralIdentifier identifier : promotedFields.getNamedFields()) {
             if (unqualifiedName.equals(identifier.getUnqualifiedName())) {
-                return new GoResolveResult(identifier);
+                return GoResolveResult.fromElement(identifier);
             }
         }
 
         for (GoTypeStructAnonymousField field : promotedFields.getAnonymousFields()) {
             if (unqualifiedName.equals(field.getFieldName())) {
-                return new GoResolveResult(field);
+                return GoResolveResult.fromElement(field);
             }
         }
         return GoResolveResult.NULL;
@@ -97,14 +97,14 @@ public class SelectorOfStructFieldReference
         for (GoTypeStructField field : type.getFields()) {
             for (GoLiteralIdentifier identifier : field.getIdentifiers()) {
                 if (identifier.getUnqualifiedName().equals(unqualifiedName))
-                    return new GoResolveResult(identifier);
+                    return GoResolveResult.fromElement(identifier);
             }
         }
 
         GoTypeStructAnonymousField[] anonymousFields = type.getAnonymousFields();
         for (GoTypeStructAnonymousField field : anonymousFields) {
             if (field.getFieldName().equals(unqualifiedName))
-                return new GoResolveResult(field);
+                return GoResolveResult.fromElement(field);
         }
         return GoResolveResult.NULL;
     }

@@ -1,11 +1,5 @@
 package ro.redeul.google.go.imports;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.intellij.codeHighlighting.TextEditorHighlightingPass;
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.ShowAutoImportPass;
@@ -21,6 +15,7 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.util.ui.UIUtil;
+import org.jetbrains.annotations.NotNull;
 import ro.redeul.google.go.inspection.fix.AddImportFix;
 import ro.redeul.google.go.inspection.fix.RemoveImportFix;
 import ro.redeul.google.go.lang.lexer.GoTokenTypes;
@@ -34,12 +29,11 @@ import ro.redeul.google.go.lang.psi.types.GoPsiTypeName;
 import ro.redeul.google.go.lang.stubs.GoNamesCache;
 import ro.redeul.google.go.options.GoSettings;
 
+import java.util.*;
+
 import static com.intellij.psi.util.PsiTreeUtil.findElementOfClassAtRange;
 import static ro.redeul.google.go.lang.psi.utils.GoFileUtils.isPackageNameImported;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.findParentOfType;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.getPrevSiblingIfItsWhiteSpaceOrComment;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isNodeOfType;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isWhiteSpaceNode;
+import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.*;
 
 /**
  * This class search for all "Unresolved symbols" highlights, try to prompt user to import
@@ -48,7 +42,7 @@ import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isWhiteSpaceNode;
 public class AutoImportHighlightingPass extends TextEditorHighlightingPass {
     private final GoFile file;
     private final Editor editor;
-    private TextRange visibleRange;
+    private final TextRange visibleRange;
 
     public AutoImportHighlightingPass(Project project, GoFile file,
                                       Editor editor) {
@@ -61,7 +55,7 @@ public class AutoImportHighlightingPass extends TextEditorHighlightingPass {
     }
 
     @Override
-    public void doCollectInformation(ProgressIndicator progress) {
+    public void doCollectInformation(@NotNull ProgressIndicator progress) {
     }
 
     private Data getVisibleHighlights() {
@@ -73,9 +67,6 @@ public class AutoImportHighlightingPass extends TextEditorHighlightingPass {
         }
 
         GoNamesCache namesCache = GoNamesCache.getInstance(project);
-        if (namesCache == null) {
-            return null;
-        }
 
         Set<String> imported = new HashSet<String>();
         for (GoImportDeclarations ids : file.getImportDeclarations()) {
@@ -86,6 +77,7 @@ public class AutoImportHighlightingPass extends TextEditorHighlightingPass {
                 }
             }
         }
+
         Data toImport = null;
         for (RangeHighlighter highlighter : getAllHighlighters(project)) {
             int start = highlighter.getStartOffset();
@@ -101,12 +93,16 @@ public class AutoImportHighlightingPass extends TextEditorHighlightingPass {
             // if this a "Unresolved symbol" error
             HighlightInfo info = (HighlightInfo) errorStripeTooltip;
             if (info.getSeverity() != HighlightSeverity.ERROR ||
-                !info.description.contains("Unresolved symbol")) {
+                !info.getDescription().contains("Unresolved symbol")) {
                 continue;
             }
 
             GoLiteralIdentifier id = findElementOfClassAtRange(file, start, end, GoLiteralIdentifier.class);
             if (!isPackageUsage(id)) {
+                continue;
+            }
+
+            if (id == null) {
                 continue;
             }
 
@@ -179,20 +175,14 @@ public class AutoImportHighlightingPass extends TextEditorHighlightingPass {
         }
 
         // if caret is on a package name, don't optimize it.
-        if (isCaretOnPackageName()) {
-            return false;
-        }
-        return true;
+        return !isCaretOnPackageName();
     }
 
     private boolean isCaretOnPackageName() {
         int offset = editor.getCaretModel().getOffset();
-        PsiElement caretElement = file.findElementAt(offset);
-        if (isElementAPackageName(file.findElementAt(offset))) {
-            return true;
-        }
+        //PsiElement caretElement = file.findElementAt(offset);
 
-        return offset > 0 && isElementAPackageName(file.findElementAt(offset - 1));
+        return isElementAPackageName(file.findElementAt(offset)) || offset > 0 && isElementAPackageName(file.findElementAt(offset - 1));
     }
 
     private boolean isElementAPackageName(PsiElement element) {

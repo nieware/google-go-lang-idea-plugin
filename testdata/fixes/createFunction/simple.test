@@ -3,6 +3,7 @@ package main
 func main() {
     println(/*begin*/Foo/*end*/())
 }
+
 -----
 package main
 
@@ -11,5 +12,5 @@ func main() {
 }
 
 func Foo() {
-    <caret>
+	<caret>
 }

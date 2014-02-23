@@ -47,12 +47,8 @@ public class GoTypeSpecImpl extends GoPsiElementBase implements GoTypeSpec {
                                        @NotNull ResolveState state,
                                        PsiElement lastParent,
                                        @NotNull PsiElement place) {
-        if (! "builtin".equals(state.get(GoResolveStates.PackageName)) &&
-            ! state.get(GoResolveStates.IsOriginalPackage) &&
-            ! GoNamesUtil.isExportedName(getName()))
-            return true;
+        return !"builtin".equals(state.get(GoResolveStates.PackageName)) && !state.get(GoResolveStates.IsOriginalPackage) && !GoNamesUtil.isExportedName(getName()) || processor.execute(this, state);
 
-        return processor.execute(this, state);
     }
 
     @Override
@@ -62,6 +58,10 @@ public class GoTypeSpecImpl extends GoPsiElementBase implements GoTypeSpec {
 
     @Override
     public String getName() {
+        if (getTypeNameDeclaration() == null) {
+            return "";
+        }
+
         return getTypeNameDeclaration().getName();
     }
 

@@ -1,9 +1,5 @@
 package ro.redeul.google.go.lang.parser;
 
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Set;
-
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.PsiParser;
@@ -20,6 +16,10 @@ import ro.redeul.google.go.lang.parser.parsing.toplevel.CompilationUnit;
 import ro.redeul.google.go.lang.parser.parsing.types.Types;
 import ro.redeul.google.go.lang.parser.parsing.util.ParserUtils;
 
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Author: Toader Mihai Claudiu <mtoader@gmail.com>
  * <p/>
@@ -35,9 +35,9 @@ public class GoParser extends ParserUtils implements PsiParser {
         ParseIota
     }
 
-    EnumSet<ParsingFlag> flags = EnumSet.noneOf(ParsingFlag.class);
+    private final EnumSet<ParsingFlag> flags = EnumSet.noneOf(ParsingFlag.class);
 
-    Set<String> packageNames = new HashSet<String>();
+    private final Set<String> packageNames = new HashSet<String>();
 
     public boolean isSet(ParsingFlag parseFlag) {
         return flags.contains(parseFlag);
@@ -87,7 +87,7 @@ public class GoParser extends ParserUtils implements PsiParser {
         return builder.getTreeBuilt();
     }
 
-    public boolean parseTopLevelDeclarations(PsiBuilder builder) {
+    public void parseTopLevelDeclarations(PsiBuilder builder) {
 
         while ( ! builder.eof() ) {
 
@@ -97,8 +97,6 @@ public class GoParser extends ParserUtils implements PsiParser {
 
             ParserUtils.endStatement(builder);
         }
-
-        return true;
     }
 
     private IElementType parseTopLevelDeclaration(PsiBuilder builder) {
@@ -122,7 +120,7 @@ public class GoParser extends ParserUtils implements PsiParser {
     }
 
     public int parseIdentifierList(PsiBuilder builder, boolean markList) {
-        return IdentifierList.parse(builder, this, markList);
+        return IdentifierList.parse(builder, markList);
     }
 
     public IElementType parseBody(PsiBuilder builder) {
@@ -141,8 +139,8 @@ public class GoParser extends ParserUtils implements PsiParser {
         return Types.parseTypeName(builder, this);
     }
 
-    public boolean parseMethodSignature(PsiBuilder builder) {
-        return FunctionOrMethodDeclaration.parseSignature(builder, this);
+    public void parseMethodSignature(PsiBuilder builder) {
+        FunctionOrMethodDeclaration.parseSignature(builder, this);
     }
 
     public int parseExpressionList(PsiBuilder builder) {
@@ -165,12 +163,12 @@ public class GoParser extends ParserUtils implements PsiParser {
         return Expressions.parsePrimary(builder, this);
     }
 
-    public boolean parseFunctionSignature(PsiBuilder builder) {
-        return FunctionOrMethodDeclaration.parseCompleteMethodSignature(builder, this);
+    public void parseFunctionSignature(PsiBuilder builder) {
+        FunctionOrMethodDeclaration.parseCompleteMethodSignature(builder, this);
     }
 
-    public int parseTypeList(PsiBuilder builder) {
-        return Types.parseTypeDeclarationList(builder, this);
+    public void parseTypeList(PsiBuilder builder) {
+        Types.parseTypeDeclarationList(builder, this);
     }
 
     public boolean tryParseSimpleStmt(PsiBuilder builder) {

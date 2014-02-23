@@ -38,7 +38,7 @@ public class AddImportFix implements QuestionAction {
 
     @Override
     public boolean execute() {
-        if (pathsToImport == null || pathsToImport.isEmpty()) {
+        if (pathsToImport.isEmpty()) {
             return true;
         }
 
@@ -68,6 +68,7 @@ public class AddImportFix implements QuestionAction {
     private static void doAddImport(GoFile file, Editor editor, String pathToImport) {
         GoImportDeclarations[] ids = file.getImportDeclarations();
         Document document = editor.getDocument();
+
         if (ids.length == 0) {
             addImportUnderPackage(file, document, pathToImport);
             return;
@@ -75,6 +76,7 @@ public class AddImportFix implements QuestionAction {
 
         GoImportDeclarations importDeclarations = ids[ids.length - 1];
         GoImportDeclaration[] imports = importDeclarations.getDeclarations();
+
         if (imports.length == 0) {
             addImportUnderPackage(file, document, pathToImport);
             return;

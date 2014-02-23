@@ -12,9 +12,7 @@ import com.intellij.psi.tree.TokenSet;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isNewLineNode;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isNodeOfType;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isWhiteSpaceNode;
+import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.*;
 
 class GoAssignListBlock extends GoBlock {
     /**
@@ -25,7 +23,7 @@ class GoAssignListBlock extends GoBlock {
      *          BCD = 3
      *      )
      */
-    protected static final TokenSet ALIGN_ASSIGNMENT_STATEMENTS = TokenSet.create(
+    private static final TokenSet ALIGN_ASSIGNMENT_STATEMENTS = TokenSet.create(
         CONST_DECLARATION,
         VAR_DECLARATION
     );
@@ -79,13 +77,9 @@ class GoAssignListBlock extends GoBlock {
 
             Block childBlock;
             if (getIndentedElements().contains(type)) {
-                childBlock =
-                    GoBlockGenerator.generateBlock(
-                        child, Indent.getNormalIndent(), mySettings);
+                childBlock = GoBlockGenerator.generateBlock(child, Indent.getNormalIndent(), mySettings);
             } else {
-                childBlock =
-                    GoBlockGenerator.generateBlock(
-                        child, mySettings);
+                childBlock = GoBlockGenerator.generateBlock(child, mySettings);
             }
 
             children.add(childBlock);

@@ -6,6 +6,7 @@ import ro.redeul.google.go.GoBundle;
 import ro.redeul.google.go.lang.parser.GoElementTypes;
 import ro.redeul.google.go.lang.parser.GoParser;
 import ro.redeul.google.go.lang.parser.parsing.util.ParserUtils;
+
 import static ro.redeul.google.go.lang.parser.GoParser.ParsingFlag.AllowCompositeLiteral;
 
 /**
@@ -13,7 +14,7 @@ import static ro.redeul.google.go.lang.parser.GoParser.ParsingFlag.AllowComposit
  * Date: Jul 25, 2010
  * Time: 8:01:22 PM
  */
-public class IfStatement implements GoElementTypes {
+class IfStatement implements GoElementTypes {
 
     public static IElementType parse(PsiBuilder builder, GoParser parser) {
 

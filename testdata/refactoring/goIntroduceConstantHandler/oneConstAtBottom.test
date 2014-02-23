@@ -5,6 +5,7 @@ func main() {
 }
 
 const N = 5
+
 -----
 package main
 
@@ -13,6 +14,6 @@ func main() {
 }
 
 const (
-    N     = 5
-    VALUE = 1 + 2
+	N     = 5
+	VALUE = 1 + 2
 )<caret>

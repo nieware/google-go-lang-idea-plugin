@@ -1,8 +1,5 @@
 package ro.redeul.google.go.lang.psi.resolve.references;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
@@ -19,16 +16,19 @@ import ro.redeul.google.go.lang.psi.typing.GoTypeInterface;
 import ro.redeul.google.go.lang.psi.typing.GoTypeName;
 import ro.redeul.google.go.lang.psi.typing.GoTypePointer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class InterfaceMethodReference extends
                                       GoPsiReference.Single<GoSelectorExpression, InterfaceMethodReference> {
 
-    GoTypeInterface type;
-    GoSelectorExpression selector;
+    private final GoTypeInterface type;
+    private final GoSelectorExpression selector;
 
-    private static ResolveCache.AbstractResolver<InterfaceMethodReference, GoResolveResult> RESOLVER =
+    private static final ResolveCache.AbstractResolver<InterfaceMethodReference, GoResolveResult> RESOLVER =
         new ResolveCache.AbstractResolver<InterfaceMethodReference, GoResolveResult>() {
             @Override
-            public GoResolveResult resolve(InterfaceMethodReference intfMethodRef,
+            public GoResolveResult resolve(@NotNull InterfaceMethodReference intfMethodRef,
                                            boolean incompleteCode) {
                 GoSelectorExpression selector = intfMethodRef.selector;
 
@@ -47,7 +47,7 @@ public class InterfaceMethodReference extends
 
                 for (GoFunctionDeclaration declaration : methodSet.getMethods()) {
                     if (name.equals(declaration.getFunctionName())) {
-                        return new GoResolveResult(declaration.getNameIdentifier());
+                        return GoResolveResult.fromElement(declaration.getNameIdentifier());
                     }
                 }
 

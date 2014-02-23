@@ -1,7 +1,5 @@
 package ro.redeul.google.go.lang.documentation;
 
-import java.util.List;
-
 import com.intellij.lang.documentation.CodeDocumentationProvider;
 import com.intellij.lang.documentation.ExternalDocumentationProvider;
 import com.intellij.openapi.project.Project;
@@ -24,13 +22,9 @@ import ro.redeul.google.go.lang.psi.types.GoPsiTypeName;
 import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructAnonymousField;
 import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructField;
 
-import static ro.redeul.google.go.lang.documentation.DocumentUtil.getConstDocument;
-import static ro.redeul.google.go.lang.documentation.DocumentUtil.getFunctionDocument;
-import static ro.redeul.google.go.lang.documentation.DocumentUtil.getFunctionQuickNavigationInfo;
-import static ro.redeul.google.go.lang.documentation.DocumentUtil.getMethodDocument;
-import static ro.redeul.google.go.lang.documentation.DocumentUtil.getTailingOrHeaderDocument;
-import static ro.redeul.google.go.lang.documentation.DocumentUtil.getTypeDocument;
-import static ro.redeul.google.go.lang.documentation.DocumentUtil.getVarDocument;
+import java.util.List;
+
+import static ro.redeul.google.go.lang.documentation.DocumentUtil.*;
 import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.resolveSafely;
 
 /**
@@ -131,11 +125,8 @@ public class GoDocumentationProvider implements CodeDocumentationProvider,
     @Override
     public boolean hasDocumentationFor(PsiElement element,
                                        PsiElement originalElement) {
-        if ( element instanceof GoFunctionDeclaration || element instanceof GoPsiTypeName) {
-            return true;
-        }
-
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        //To change body of implemented methods use File | Settings | File Templates.
+        return element instanceof GoFunctionDeclaration || element instanceof GoPsiTypeName;
     }
 
     @Override

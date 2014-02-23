@@ -1,24 +1,20 @@
 package ro.redeul.google.go.lang.psi.resolve.references;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-
 import com.intellij.openapi.util.TextRange;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiElementResolveResult;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiPolyVariantReference;
-import com.intellij.psi.ResolveResult;
+import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
 import ro.redeul.google.go.lang.psi.GoFile;
 import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralString;
 import ro.redeul.google.go.lang.psi.toplevel.GoImportDeclaration;
 import ro.redeul.google.go.lang.stubs.GoNamesCache;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
 public class ImportReference extends GoPsiReference.Single<GoImportDeclaration, ImportReference>
-    implements PsiPolyVariantReference {
+        implements PsiPolyVariantReference {
 
     public ImportReference(GoImportDeclaration element) {
         super(element);
@@ -37,15 +33,16 @@ public class ImportReference extends GoPsiReference.Single<GoImportDeclaration, 
         }
 
         return new TextRange(
-            importPath.getStartOffsetInParent(),
-            importPath.getStartOffsetInParent() + importPath.getTextLength()
+                importPath.getStartOffsetInParent(),
+                importPath.getStartOffsetInParent() + importPath.getTextLength()
         );
     }
 
     @NotNull
     @Override
     public String getCanonicalText() {
-        return getElement().getImportPath().getValue();
+        GoLiteralString importPath = getElement().getImportPath();
+        return importPath == null ? "" : importPath.getValue();
     }
 
     @Override

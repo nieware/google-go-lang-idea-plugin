@@ -12,18 +12,18 @@ import ro.redeul.google.go.lang.psi.toplevel.GoFunctionParameter;
 import ro.redeul.google.go.lang.psi.toplevel.GoMethodDeclaration;
 import ro.redeul.google.go.lang.psi.toplevel.GoMethodReceiver;
 
-import static com.intellij.patterns.PsiJavaPatterns.psiElement;
+import static com.intellij.patterns.PlatformPatterns.psiElement;
 import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.findParentOfType;
 
 public class ShortVarDeclarationResolver {
 
-    public static final ElementPattern<GoLiteralIdentifier> SHORT_VAR_IN_FUNCTION =
+    private static final ElementPattern<GoLiteralIdentifier> SHORT_VAR_IN_FUNCTION =
             psiElement(GoLiteralIdentifier.class).withParent(
                     psiElement(GoShortVarDeclaration.class).withParent(
                             psiElement(GoBlockStatement.class).withParent(GoFunctionDeclaration.class)
                     ));
 
-    public static final ElementPattern<GoLiteralIdentifier> SHORT_VAR =
+    private static final ElementPattern<GoLiteralIdentifier> SHORT_VAR =
             psiElement(GoLiteralIdentifier.class).withParent(
                     psiElement(GoShortVarDeclaration.class));
 

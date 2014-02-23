@@ -5,7 +5,8 @@ import com.intellij.psi.tree.IElementType;
 import ro.redeul.google.go.lang.parser.GoElementTypes;
 import ro.redeul.google.go.lang.parser.GoParser;
 import ro.redeul.google.go.lang.parser.parsing.util.ParserUtils;
-import static ro.redeul.google.go.lang.parser.GoParser.ParsingFlag.*;
+
+import static ro.redeul.google.go.lang.parser.GoParser.ParsingFlag.ParseIota;
 
 /**
  * Author: Toader Mihai Claudiu <mtoader@gmail.com>
@@ -13,7 +14,7 @@ import static ro.redeul.google.go.lang.parser.GoParser.ParsingFlag.*;
  * Date: Jul 24, 2010
  * Time: 9:38:55 PM
  */
-public class ConstDeclaration implements GoElementTypes {
+class ConstDeclaration implements GoElementTypes {
 
     public static IElementType parse(PsiBuilder builder, GoParser parser) {
 

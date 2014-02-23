@@ -8,13 +8,14 @@ var (
 func main() {
     println(/*begin*/Foo/*end*/, va, vb)
 }
+
 -----
 package main
 
 var (
     va = 5
     vb = 3
-    Foo = value
+	Foo = value
 )
 
 func main() {

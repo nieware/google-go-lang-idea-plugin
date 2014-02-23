@@ -1,8 +1,5 @@
 package ro.redeul.google.go.lang.psi.impl.statements;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
@@ -13,12 +10,15 @@ import ro.redeul.google.go.lang.psi.impl.GoPsiElementBase;
 import ro.redeul.google.go.lang.psi.statements.GoAssignmentStatement;
 import ro.redeul.google.go.lang.psi.visitors.GoElementVisitor;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static ro.redeul.google.go.lang.lexer.GoTokenTypes.*;
 
 public class GoAssignmentStatementImpl extends GoPsiElementBase
     implements GoAssignmentStatement {
 
-    private static Map<IElementType, Op> operatorsMap =
+    private static final Map<IElementType, Op> operatorsMap =
         new HashMap<IElementType, Op>() {
             {
                 put(oPLUS_ASSIGN, Op.PlusEq);

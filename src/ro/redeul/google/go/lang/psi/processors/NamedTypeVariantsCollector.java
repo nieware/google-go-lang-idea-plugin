@@ -1,18 +1,19 @@
 package ro.redeul.google.go.lang.psi.processors;
 
-import java.util.ArrayList;
-import java.util.List;
-import javax.swing.*;
-
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.ResolveState;
 import com.intellij.psi.scope.BaseScopeProcessor;
 import com.intellij.util.PlatformIcons;
+import org.jetbrains.annotations.NotNull;
 import ro.redeul.google.go.lang.psi.toplevel.GoTypeNameDeclaration;
 import ro.redeul.google.go.lang.psi.toplevel.GoTypeSpec;
 import ro.redeul.google.go.lang.psi.types.GoPsiTypeInterface;
+
+import javax.swing.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Author: Toader Mihai Claudiu <mtoader@gmail.com>
@@ -20,19 +21,19 @@ import ro.redeul.google.go.lang.psi.types.GoPsiTypeInterface;
  * Date: 5/21/11
  * Time: 6:16 PM
  */
-public class NamedTypeVariantsCollector extends BaseScopeProcessor {
+class NamedTypeVariantsCollector extends BaseScopeProcessor {
 
-    static final String builtInTypes[] = {
+    private static final String[] builtInTypes = {
             "uint8", "uint16", "uint32", "uint64",
             "int8", "int16", "int32", "int64",
             "float32", "float64",
             "complex64", "complex128",
-            "byte", "uint", "int", "float", "complex", "uintptr", "bool", "string"
+            "byte", "uint", "int", "complex", "uintptr", "bool", "string"
     };
 
-    List<LookupElement> variants = new ArrayList<LookupElement>();
+    private final List<LookupElement> variants = new ArrayList<LookupElement>();
 
-    public boolean execute(PsiElement element, ResolveState state) {
+    public boolean execute(@NotNull PsiElement element, ResolveState state) {
 
         if ( element instanceof GoTypeSpec ) {
             processTypeSpecification((GoTypeSpec) element, state);

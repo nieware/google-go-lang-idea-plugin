@@ -3,7 +3,6 @@ package ro.redeul.google.go.intentions.conversions;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
@@ -23,9 +22,7 @@ import ro.redeul.google.go.util.expression.FlipBooleanExpression;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.findChildOfType;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.findParentOfType;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isNodeOfType;
+import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.*;
 import static ro.redeul.google.go.util.EditorUtil.reformatPositions;
 
 public class ConvertSwitchToIfIntention extends Intention {
@@ -36,7 +33,7 @@ public class ConvertSwitchToIfIntention extends Intention {
     }
 
     @Override
-    protected void processIntention(@NotNull PsiElement element, Project project, Editor editor)
+    protected void processIntention(@NotNull PsiElement element, Editor editor)
             throws IntentionExecutionException {
         GoSwitchExpressionStatement se = findParentOfType(element, GoSwitchExpressionStatement.class);
         if (se == null) {

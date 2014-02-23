@@ -1,15 +1,6 @@
 package ro.redeul.google.go.formatter.blocks;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import com.intellij.formatting.Alignment;
-import com.intellij.formatting.Block;
-import com.intellij.formatting.ChildAttributes;
-import com.intellij.formatting.Indent;
-import com.intellij.formatting.Spacing;
-import com.intellij.formatting.Wrap;
+import com.intellij.formatting.*;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
@@ -26,6 +17,10 @@ import ro.redeul.google.go.lang.parser.GoElementTypes;
 import ro.redeul.google.go.lang.psi.GoFile;
 import ro.redeul.google.go.lang.psi.statements.GoBlockStatement;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isNewLineNode;
 import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isWhiteSpaceNode;
 
@@ -35,24 +30,25 @@ import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.isWhiteSpaceNode;
  */
 class GoBlock implements Block, GoElementTypes {
 
-    final protected ASTNode myNode;
-    final protected Alignment myAlignment;
-    final protected Indent myIndent;
-    final protected Wrap myWrap;
-    final protected CommonCodeStyleSettings mySettings;
+    final ASTNode myNode;
+    private final Alignment myAlignment;
+    private final Indent myIndent;
+    private final Wrap myWrap;
+    final CommonCodeStyleSettings mySettings;
     private Boolean myIncomplete;
 
-    protected List<Block> mySubBlocks = null;
+    private List<Block> mySubBlocks = null;
 
-    protected static final Spacing ONE_LINE_SPACING = Spacing.createSpacing(0, 0, 1, false, 0);
-    protected static final Spacing ONE_LINE_SPACING_KEEP_LINE_BREAKS = Spacing.createSpacing(0, 0, 1, true, 1);
-    protected static final Spacing BASIC_SPACING = Spacing.createSpacing(1, 1, 0, false, 0);
-    protected static final Spacing BASIC_SPACING_KEEP_LINE_BREAKS = Spacing.createSpacing(1, 1, 0, true, 0);
-    protected static final Spacing EMPTY_SPACING = Spacing.createSpacing(0, 0, 0, false, 0);
-    protected static final Spacing EMPTY_SPACING_KEEP_LINE_BREAKS = Spacing.createSpacing(0, 0, 0, true, 0);
-    protected static final Spacing LINE_SPACING = Spacing.createSpacing(0, 0, 2, false, 0);
+    static final Spacing ONE_LINE_SPACING = Spacing.createSpacing(0, 0, 1, false, 0);
+    static final Spacing ONE_LINE_SPACING_KEEP_LINE_BREAKS = Spacing.createSpacing(0, 0, 1, true, 1);
+    static final Spacing BASIC_SPACING = Spacing.createSpacing(1, 1, 0, false, 0);
+    static final Spacing BASIC_SPACING_KEEP_LINE_BREAKS = Spacing.createSpacing(1, 1, 0, true, 0);
+    static final Spacing EMPTY_SPACING = Spacing.createSpacing(0, 0, 0, false, 0);
+    static final Spacing EMPTY_SPACING_KEEP_LINE_BREAKS = Spacing.createSpacing(0, 0, 0, true, 0);
+    static final Spacing LINE_SPACING = Spacing.createSpacing(0, 0, 2, false, 0);
 
-    protected static final Indent NORMAL_INDENT_TO_CHILDREN = Indent.getIndent(Indent.Type.NORMAL, false, true);
+    static final Indent NORMAL_INDENT_TO_CHILDREN  = Indent.getIndent(Indent.Type.NORMAL, false, true);
+    static final Indent CONTINUATION_WITHOUT_FIRST = Indent.getIndent(Indent.Type.CONTINUATION_WITHOUT_FIRST, false, false);
 
     /**
      * Those statements might contain comments which need to align together
@@ -62,7 +58,7 @@ class GoBlock implements Block, GoElementTypes {
      *          BCDE = 3456 // comment
      *      )
      */
-    protected static final TokenSet ALIGN_COMMENT_STATEMENTS = TokenSet.create(
+    static final TokenSet ALIGN_COMMENT_STATEMENTS = TokenSet.create(
         CONST_DECLARATIONS,
         VAR_DECLARATIONS,
         TYPE_INTERFACE,
@@ -121,7 +117,7 @@ class GoBlock implements Block, GoElementTypes {
     }
 
     @NotNull
-    public ASTNode getNode() {
+    ASTNode getNode() {
         return myNode;
     }
 
@@ -145,7 +141,7 @@ class GoBlock implements Block, GoElementTypes {
     }
 
     @Nullable
-    protected List<Block> buildChildren() {
+    List<Block> buildChildren() {
         List<Block> children = new ArrayList<Block>();
 
         ASTNode prevChild = null;
@@ -162,7 +158,7 @@ class GoBlock implements Block, GoElementTypes {
         return children;
     }
 
-    protected TokenSet getIndentedElements() {
+    TokenSet getIndentedElements() {
         return INDENT_STATEMENTS;
     }
 
@@ -178,16 +174,16 @@ class GoBlock implements Block, GoElementTypes {
         return myAlignment;
     }
 
-    protected static boolean isCommentBlock(Block block) {
+    static boolean isCommentBlock(Block block) {
         return block instanceof GoBlock &&
             COMMENTS.contains(((GoBlock) block).getNode().getElementType());
     }
 
-    protected static boolean inTheSameLine(GoBlock block1, GoBlock block2) {
+    static boolean inTheSameLine(GoBlock block1, GoBlock block2) {
         return inTheSameLine(block1.getNode(), block2.getNode());
     }
 
-    protected static boolean inTheSameLine(ASTNode node1, ASTNode node2) {
+    static boolean inTheSameLine(ASTNode node1, ASTNode node2) {
         int end = node2.getStartOffset();
         while ((node1 = node1.getTreeNext()) != null && node1.getStartOffset() < end) {
             if (isNewLineNode(node1.getPsi())) {
@@ -198,7 +194,7 @@ class GoBlock implements Block, GoElementTypes {
         return true;
     }
 
-    public Spacing getSpacing(Block child1, Block child2) {
+    public Spacing getSpacing(Block child1, @NotNull Block child2) {
         if (!(child1 instanceof GoBlock) || !(child2 instanceof GoBlock)) {
             return null;
         }
@@ -206,7 +202,7 @@ class GoBlock implements Block, GoElementTypes {
         return getGoBlockSpacing((GoBlock) child1, (GoBlock) child2);
     }
 
-    protected Spacing getGoBlockSpacing(GoBlock child1, GoBlock child2) {
+    Spacing getGoBlockSpacing(GoBlock child1, GoBlock child2) {
         IElementType child1Type = child1.getNode().getElementType();
         IElementType child2Type = child2.getNode().getElementType();
         // there should be a space after ","
@@ -226,8 +222,21 @@ class GoBlock implements Block, GoElementTypes {
         }
 
         // there should be a space before any block statement
-        if (child2.getNode().getPsi() instanceof GoBlockStatement) {
+        if (child2.getNode().getPsi() instanceof GoBlockStatement ||
+                child2Type == FUNCTION_RESULT) {
             return BASIC_SPACING_KEEP_LINE_BREAKS;
+        }
+
+        if (child1Type == kINTERFACE) {
+            try {
+                if (child1.getNode().getTreeParent().getTreeParent().getTreeParent().getTreeParent().getPsi() instanceof GoFile) {
+                    return BASIC_SPACING_KEEP_LINE_BREAKS;
+                } else {
+                    return EMPTY_SPACING_KEEP_LINE_BREAKS;
+                }
+            } catch (Exception ignored) {
+                return BASIC_SPACING_KEEP_LINE_BREAKS;
+            }
         }
 
         // there should be no space after "type" in type guard: p.(type)
@@ -247,12 +256,21 @@ class GoBlock implements Block, GoElementTypes {
             // for function declarations, there should be exactly one space after "func"
             // for literal functions, there should be no space after "func"
             ASTNode parent = child1.getNode().getTreeParent();
-            if (parent != null && parent.getElementType() == LITERAL_FUNCTION) {
+            if (parent != null && (parent.getElementType() == LITERAL_FUNCTION || parent.getElementType() == TYPE_FUNCTION)) {
                 return EMPTY_SPACING;
             }
 
             return BASIC_SPACING;
         }
+
+        if (COMMENTS.contains(child1Type) && child2Type == FUNCTION_DECLARATION) {
+            if (inTheSameLine(child1, child2)) {
+                return BASIC_SPACING_KEEP_LINE_BREAKS;
+            } else {
+                return ONE_LINE_SPACING_KEEP_LINE_BREAKS;
+            }
+        }
+
         return null;
     }
 
@@ -275,18 +293,34 @@ class GoBlock implements Block, GoElementTypes {
 
 
     @Nullable
-    protected Indent getChildIndent(@Nullable PsiElement prevChild, @Nullable PsiElement child) {
+    Indent getChildIndent(@Nullable PsiElement prevChild, @Nullable PsiElement child) {
         return getChildIndent(child);
     }
 
     @Nullable
-    protected Indent getChildIndent(@Nullable PsiElement child) {
+    Indent getChildIndent(@Nullable PsiElement child) {
         if (child == null) {
             return Indent.getNormalIndent();
         }
 
         ASTNode node = child.getNode();
         if (node == null || getIndentedElements().contains(node.getElementType())) {
+            if (node != null && node.getElementType() == LITERAL_COMPOSITE_ELEMENT) {
+                boolean inFunctionCall = false;
+                ASTNode nodeParent = node;
+                while (nodeParent != null) {
+                    if (nodeParent.getElementType() == CALL_OR_CONVERSION_EXPRESSION) {
+                        inFunctionCall = true;
+                        break;
+                    }
+
+                    nodeParent = nodeParent.getTreeParent();
+                }
+
+                if (inFunctionCall) {
+                    return Indent.getNoneIndent();
+                }
+            }
             return Indent.getNormalIndent();
         }
 
@@ -305,7 +339,7 @@ class GoBlock implements Block, GoElementTypes {
         return myNode.getFirstChildNode() == null;
     }
 
-    protected ASTNode[] getGoChildren() {
+    ASTNode[] getGoChildren() {
         PsiElement psi = myNode.getPsi();
         if (psi instanceof OuterLanguageElement) {
             TextRange range = myNode.getTextRange();

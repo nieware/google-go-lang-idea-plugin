@@ -3,7 +3,6 @@ package ro.redeul.google.go.intentions.statements;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Condition;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
@@ -20,22 +19,15 @@ import ro.redeul.google.go.lang.psi.statements.switches.GoSwitchExpressionStatem
 import ro.redeul.google.go.lang.psi.statements.switches.GoSwitchTypeStatement;
 import ro.redeul.google.go.lang.psi.visitors.GoRecursiveElementVisitor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.intellij.psi.util.PsiTreeUtil.findFirstParent;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.findChildOfType;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.findParentOfType;
-import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.resolveSafely;
+import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.*;
 import static ro.redeul.google.go.util.EditorUtil.reformatPositions;
 
 public class MoveSimpleStatementOutIntention extends Intention {
 
-    public static final Comparator<PsiElement> REVERSE_POSITION_COMPARATOR = new Comparator<PsiElement>() {
+    private static final Comparator<PsiElement> REVERSE_POSITION_COMPARATOR = new Comparator<PsiElement>() {
         @Override
         public int compare(PsiElement o1, PsiElement o2) {
             return o2.getTextOffset() - o1.getTextOffset();
@@ -85,7 +77,7 @@ public class MoveSimpleStatementOutIntention extends Intention {
     }
 
     @Override
-    protected void processIntention(@NotNull PsiElement element, Project project, Editor editor)
+    protected void processIntention(@NotNull PsiElement element, Editor editor)
             throws IntentionExecutionException {
         GoIfStatement ifStatement = findParentOfType(element, GoIfStatement.class);
         if (ifStatement != null) {
@@ -108,7 +100,6 @@ public class MoveSimpleStatementOutIntention extends Intention {
         GoForWithClausesStatement forStatement = findParentOfType(element, GoForWithClausesStatement.class);
         if (forStatement != null) {
             moveSimpleStatementOut(editor, forStatement);
-            return;
         }
     }
 
@@ -127,11 +118,7 @@ public class MoveSimpleStatementOutIntention extends Intention {
     private static void moveSimpleStatementOut(Editor editor, GoSwitchTypeStatement stStmt) {
         GoSimpleStatement simpleStatement = stStmt.getSimpleStatement();
         PsiElement endElement = stStmt.getTypeGuard();
-        if (endElement == null) {
-            endElement = findChildOfType(stStmt, GoTokenTypes.oSEMI);
-        } else {
-            endElement = endElement.getPrevSibling();
-        }
+        endElement = endElement.getPrevSibling();
 
         if (simpleStatement == null || endElement == null) {
             return;

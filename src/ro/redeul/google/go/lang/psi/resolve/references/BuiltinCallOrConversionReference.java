@@ -1,9 +1,5 @@
 package ro.redeul.google.go.lang.psi.resolve.references;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.patterns.ElementPattern;
 import com.intellij.psi.PsiElement;
@@ -19,12 +15,17 @@ import ro.redeul.google.go.lang.psi.processors.GoResolveStates;
 import ro.redeul.google.go.lang.psi.resolve.GoResolveResult;
 import ro.redeul.google.go.lang.psi.resolve.MethodOrTypeNameResolver;
 import ro.redeul.google.go.lang.stubs.GoNamesCache;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 import static com.intellij.patterns.PlatformPatterns.psiElement;
 import static ro.redeul.google.go.util.LookupElementUtil.createLookupElement;
 
 public class BuiltinCallOrConversionReference extends AbstractCallOrConversionReference<BuiltinCallOrConversionReference> {
 
-    public static ElementPattern<GoLiteralExpression> MATCHER =
+    public static final ElementPattern<GoLiteralExpression> MATCHER =
                 psiElement(GoLiteralExpression.class)
                     .withParent(psiElement(GoBuiltinCallExpression.class))
                     .atStartOf(psiElement(GoBuiltinCallExpression.class));
@@ -41,7 +42,7 @@ public class BuiltinCallOrConversionReference extends AbstractCallOrConversionRe
     private static final ResolveCache.AbstractResolver<BuiltinCallOrConversionReference, GoResolveResult> RESOLVER =
         new ResolveCache.AbstractResolver<BuiltinCallOrConversionReference, GoResolveResult>() {
             @Override
-            public GoResolveResult resolve(BuiltinCallOrConversionReference psiReference, boolean incompleteCode) {
+            public GoResolveResult resolve(@NotNull BuiltinCallOrConversionReference psiReference, boolean incompleteCode) {
                 PsiElement element = psiReference.getElement();
 
                 MethodOrTypeNameResolver processor =
@@ -59,7 +60,7 @@ public class BuiltinCallOrConversionReference extends AbstractCallOrConversionRe
                     }
                 }
 
-                return new GoResolveResult(processor.getChildDeclaration());
+                return GoResolveResult.fromElement(processor.getChildDeclaration());
             }
 
         };

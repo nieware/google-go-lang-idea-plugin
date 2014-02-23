@@ -6,11 +6,7 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import ro.redeul.google.go.lang.stubs.GoNamesCache;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class GoGoToSymbolContributor implements ChooseByNameContributor {
     @NotNull
@@ -19,8 +15,8 @@ public class GoGoToSymbolContributor implements ChooseByNameContributor {
         GoNamesCache namesCache = GoNamesCache.getInstance(project);
         Set<String> names = new HashSet<String>();
         namesCache.getAllTypeNames(names);
-        namesCache.getAllFunctionNames(names);
-        namesCache.getAllVariableNames(names);
+        namesCache.getAllFunctionNames();
+        namesCache.getAllVariableNames();
         return names.toArray(new String[names.size()]);
     }
 
@@ -31,8 +27,8 @@ public class GoGoToSymbolContributor implements ChooseByNameContributor {
         GoNamesCache namesCache = GoNamesCache.getInstance(project);
         List<NavigationItem> result = new ArrayList<NavigationItem>();
         Collections.addAll(result, namesCache.getTypesByName(name, includeNonProjectItems));
-        Collections.addAll(result, namesCache.getFunctionsByName(name, includeNonProjectItems));
-        Collections.addAll(result, namesCache.getVariablesByName(name, includeNonProjectItems));
+        Collections.addAll(result, namesCache.getFunctionsByName());
+        Collections.addAll(result, namesCache.getVariablesByName());
         return result.toArray(new NavigationItem[result.size()]);
     }
 }

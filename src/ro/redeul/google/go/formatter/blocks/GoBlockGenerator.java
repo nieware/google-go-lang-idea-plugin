@@ -1,10 +1,6 @@
 package ro.redeul.google.go.formatter.blocks;
 
-import com.intellij.formatting.Alignment;
-import com.intellij.formatting.Block;
-import com.intellij.formatting.Indent;
-import com.intellij.formatting.Wrap;
-import com.intellij.formatting.WrapType;
+import com.intellij.formatting.*;
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
@@ -30,7 +26,7 @@ public class GoBlockGenerator {
         GoElementTypes.VAR_DECLARATIONS
     );
 
-    public static final Wrap NO_WRAP = Wrap.createWrap(WrapType.NONE, false);
+    private static final Wrap NO_WRAP = Wrap.createWrap(WrapType.NONE, false);
 
     public static Block generateBlock(ASTNode node,
                                       CommonCodeStyleSettings settings) {
@@ -68,6 +64,18 @@ public class GoBlockGenerator {
         IElementType elementType = node.getElementType();
         if (elementType == GoTokenTypes.pLPAREN) {
             return new GoLeafBlock(node, null, indent, NO_WRAP, styleSettings);
+        } else if(elementType == GoTokenTypes.pRCURLY) {
+            if (node.getTreeParent().getElementType() == GoElementTypes.LITERAL_COMPOSITE_VALUE) {
+                ASTNode nodeParent = node;
+                while (nodeParent != null) {
+                    if (nodeParent.getElementType() == GoElementTypes.CALL_OR_CONVERSION_EXPRESSION) {
+                        int indentTabSize = styleSettings.getIndentOptions() == null ? 4 : styleSettings.getIndentOptions().INDENT_SIZE;
+                        return new GoLeafBlock(node, null, Indent.getSpaceIndent(indentTabSize * -1), NO_WRAP, styleSettings);
+                    }
+
+                    nodeParent = nodeParent.getTreeParent();
+                }
+            }
         } else if (elementType == GoTokenTypes.kPACKAGE ||
             elementType == GoTokenTypes.oSEMI) {
             return new GoLeafBlock(node,

@@ -20,7 +20,7 @@ public abstract class Intention implements IntentionAction {
     }
 
     @Nullable
-    private PsiElement findMatchingElement(PsiFile file, Editor editor) {
+    public PsiElement findMatchingElement(PsiFile file, Editor editor) {
         final int position = editor.getCaretModel().getOffset();
         PsiElement element = file.findElementAt(position);
         while (element != null) {
@@ -33,7 +33,7 @@ public abstract class Intention implements IntentionAction {
 
     protected abstract boolean satisfiedBy(PsiElement element);
 
-    protected boolean isStopElement(PsiElement element) {
+    boolean isStopElement(PsiElement element) {
         return element instanceof PsiFile;
     }
 
@@ -52,7 +52,7 @@ public abstract class Intention implements IntentionAction {
         }
 
         try {
-            processIntention(element, project, editor);
+            processIntention(element, editor);
         } catch (IntentionExecutionException e) {
             HintManager hintManager = HintManager.getInstance();
             if (e.getStartOffset() >= 0 && e.getLength() > 0) {
@@ -65,7 +65,7 @@ public abstract class Intention implements IntentionAction {
         }
     }
 
-    protected abstract void processIntention(@NotNull PsiElement element, Project project, Editor editor)
+    protected abstract void processIntention(@NotNull PsiElement element, Editor editor)
             throws IntentionExecutionException;
 
     @Override

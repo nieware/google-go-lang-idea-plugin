@@ -54,14 +54,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.intellij.patterns.PsiJavaPatterns.psiElement;
+import static com.intellij.patterns.PlatformPatterns.psiElement;
 import static com.intellij.patterns.StandardPatterns.or;
 import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.*;
 import static ro.redeul.google.go.util.EditorUtil.reformatPositions;
 
 public class InlineLocalVariableActionHandler extends InlineActionHandler {
 
-    public static final ElementPattern<GoLiteralIdentifier> LOCAL_VAR_DECLARATION =
+    @SuppressWarnings("unchecked")
+    private static final ElementPattern<GoLiteralIdentifier> LOCAL_VAR_DECLARATION =
         psiElement(GoLiteralIdentifier.class)
             .withParent(
                 or(
@@ -214,10 +215,10 @@ public class InlineLocalVariableActionHandler extends InlineActionHandler {
     }
 
     private void applyRemoveVariableFix(InlineContext ctx) {
-        new RemoveVariableFix().applyFix(ctx.project, ctx.identifierToInline);
+        new RemoveVariableFix().applyFix(ctx.identifierToInline);
     }
 
-    private static TokenSet MUL_TOKENS = TokenSet.create(
+    private static final TokenSet MUL_TOKENS = TokenSet.create(
         GoTokenTypes.oMUL,
         GoTokenTypes.oQUOTIENT,
         GoTokenTypes.oREMAINDER,
@@ -227,14 +228,14 @@ public class InlineLocalVariableActionHandler extends InlineActionHandler {
         GoTokenTypes.oBIT_CLEAR
     );
 
-    private static TokenSet ADD_TOKENS = TokenSet.create(
+    private static final TokenSet ADD_TOKENS = TokenSet.create(
         GoTokenTypes.oPLUS,
         GoTokenTypes.oMINUS,
         GoTokenTypes.oBIT_OR,
         GoTokenTypes.oBIT_XOR
     );
 
-    private static TokenSet REL_TOKENS = TokenSet.create(
+    private static final TokenSet REL_TOKENS = TokenSet.create(
         GoTokenTypes.oEQ,
         GoTokenTypes.oNOT_EQ,
         GoTokenTypes.oLESS,
@@ -375,10 +376,8 @@ public class InlineLocalVariableActionHandler extends InlineActionHandler {
 
     private boolean identifierShouldHaveInitializer(GoLiteralIdentifier identifier) {
         PsiElement parent = identifier.getParent();
-        if (parent instanceof GoVarDeclaration && ((GoVarDeclaration) parent).getExpressions().length == 0) {
-            return false;
-        }
-        return true;
+
+        return !(parent instanceof GoVarDeclaration && ((GoVarDeclaration) parent).getExpressions().length == 0);
     }
 
     private boolean promptToInline(InlineContext ctx, Usage usage) {
@@ -411,7 +410,6 @@ public class InlineLocalVariableActionHandler extends InlineActionHandler {
     }
 
     private static Usage findUsage(final GoLiteralIdentifier identifier, GoPsiElement scope) {
-        final String identifierText = identifier.getText();
         final List<PsiElement> writeUsages = new ArrayList<PsiElement>();
         final List<PsiElement> readUsages = new ArrayList<PsiElement>();
 

@@ -19,20 +19,16 @@ import ro.redeul.google.go.lang.psi.expressions.primary.GoParenthesisedExpressio
 import ro.redeul.google.go.lang.psi.statements.GoStatement;
 import ro.redeul.google.go.refactoring.GoRefactoringException;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 abstract class GoIntroduceVariableHandlerBase extends GoIntroduceHandlerBase {
-    protected static final String VARIABLE = "____INTRODUCE_VARIABLE____";
-    protected Project project;
-    protected Document document;
-    protected Editor editor;
-    protected GoFile file;
+    static final String VARIABLE = "____INTRODUCE_VARIABLE____";
+    Project project;
+    Document document;
+    Editor editor;
+    GoFile file;
 
-    protected GoPsiElement getDefaultVisitStartElement() {
+    GoPsiElement getDefaultVisitStartElement() {
         return null;
     }
 
@@ -91,7 +87,7 @@ abstract class GoIntroduceVariableHandlerBase extends GoIntroduceHandlerBase {
                !ApplicationManager.getApplication().isUnitTestMode();
     }
 
-    protected static String getExpressionDeclaration(GoExpr e) {
+    static String getExpressionDeclaration(GoExpr e) {
         while (e instanceof GoParenthesisedExpression) {
             e = ((GoParenthesisedExpression) e).getInnerExpression();
         }
@@ -109,7 +105,7 @@ abstract class GoIntroduceVariableHandlerBase extends GoIntroduceHandlerBase {
         return map;
     }
 
-    protected boolean expressionIsTheWholeStatement(PsiElement element, GoStatement stmt) {
+    boolean expressionIsTheWholeStatement(PsiElement element, GoStatement stmt) {
         return element.getTextRange().equals(stmt.getTextRange());
     }
 

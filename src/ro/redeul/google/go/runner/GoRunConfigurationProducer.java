@@ -4,12 +4,17 @@ import com.intellij.execution.Location;
 import com.intellij.execution.RunManagerEx;
 import com.intellij.execution.RunnerAndConfigurationSettings;
 import com.intellij.execution.actions.ConfigurationContext;
+import com.intellij.execution.actions.RunConfigurationProducer;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.execution.configurations.ConfigurationFactory;
 import com.intellij.execution.configurations.RunConfiguration;
-import com.intellij.execution.junit.RuntimeConfigurationProducer;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.util.text.StringUtilRt;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElement;
@@ -17,15 +22,19 @@ import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import ro.redeul.google.go.lang.psi.GoFile;
 
+import java.util.List;
+
 /**
  * Author: Toader Mihai Claudiu <mtoader@gmail.com>
  * <p/>
  * Date: Aug 19, 2010
  * Time: 2:49:31 PM
  */
-public class GoRunConfigurationProducer extends RuntimeConfigurationProducer {
+public class GoRunConfigurationProducer extends RunConfigurationProducer {
 
-    PsiElement element;
+    private PsiElement element;
+
+    private static final Logger LOG = Logger.getInstance(GoRunConfigurationProducer.class);
 
     public GoRunConfigurationProducer() {
         super(GoRunConfigurationType.getInstance());
@@ -36,11 +45,85 @@ public class GoRunConfigurationProducer extends RuntimeConfigurationProducer {
     }
 
     @Override
+    public boolean isConfigurationFromContext(RunConfiguration configuration, ConfigurationContext context) {
+        if ( configuration.getType() != getConfigurationType() )
+            return false;
+
+        GoFile file = locationToFile(context.getLocation());
+        if ( file == null || file.getMainFunction() == null)
+            return false;
+
+        VirtualFile virtualFile = file.getVirtualFile();
+        if (virtualFile == null)
+            return false;
+
+        GoApplicationConfiguration goAppConfig = (GoApplicationConfiguration) configuration;
+
+        try {
+
+            Project project = file.getProject();
+            Module module = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(virtualFile);
+            String name = file.getVirtualFile().getCanonicalPath();
+
+            GoApplicationModuleBasedConfiguration configurationModule = goAppConfig.getConfigurationModule();
+
+            if ( ! StringUtil.equals(goAppConfig.workingDir, project.getBasePath()) ||
+                 ! StringUtil.equals(goAppConfig.scriptName, name) ||
+                 ! (configurationModule != null && module != null && module.equals(configurationModule.getModule())))
+                return false;
+
+            return true;
+        } catch (Exception ex) {
+            LOG.error(ex);
+        }
+        return false;
+    }
+
+    @Override
+    protected boolean setupConfigurationFromContext(RunConfiguration configuration, ConfigurationContext context, Ref sourceElement) {
+        if (context.getPsiLocation() == null) {
+            return false;
+        }
+
+        PsiFile file = context.getPsiLocation().getContainingFile();
+        if (!(file instanceof GoFile)) {
+            return false;
+        }
+
+        if (((GoFile) file).getMainFunction() == null) {
+            return false;
+        }
+
+        try {
+            VirtualFile virtualFile = file.getVirtualFile();
+            if (virtualFile == null) {
+                return false;
+            }
+
+            Project project = file.getProject();
+            Module module = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(virtualFile);
+            String name = file.getVirtualFile().getCanonicalPath();
+
+            ((GoApplicationConfiguration) configuration).workingDir = project.getBasePath();
+            ((GoApplicationConfiguration) configuration).goBuildBeforeRun = false;
+            ((GoApplicationConfiguration) configuration).builderArguments = "";
+            ((GoApplicationConfiguration) configuration).scriptName = name;
+            ((GoApplicationConfiguration) configuration).scriptArguments = "";
+            ((GoApplicationConfiguration) configuration).setModule(module);
+            configuration.setName(((GoApplicationConfiguration) configuration).suggestedName());
+
+            return true;
+        } catch (Exception ex) {
+            LOG.error(ex);
+        }
+
+        return false;
+    }
+
     public PsiElement getSourceElement() {
         return element;
     }
 
-    @Override
     protected RunnerAndConfigurationSettings createConfigurationByElement(Location location, ConfigurationContext context) {
 
         GoFile goFile = locationToFile(location);
@@ -70,7 +153,7 @@ public class GoRunConfigurationProducer extends RuntimeConfigurationProducer {
 
         element = goFile;
 
-        RunnerAndConfigurationSettings settings = RunManagerEx.getInstanceEx(project).createConfiguration("", getConfigurationFactory());
+        RunnerAndConfigurationSettings settings = RunManagerEx.getInstanceEx(project).createRunConfiguration("", getConfigurationFactory());
         GoApplicationConfiguration applicationConfiguration = (GoApplicationConfiguration) settings.getConfiguration();
 
         final PsiDirectory dir = goFile.getContainingDirectory();
@@ -89,15 +172,8 @@ public class GoRunConfigurationProducer extends RuntimeConfigurationProducer {
         return settings;
     }
 
-    @Override
-    public int compareTo(Object o) {
-        return -1;
-    }
-
-    @Override
     protected RunnerAndConfigurationSettings findExistingByElement(Location location,
-                                                                   @NotNull RunnerAndConfigurationSettings[] existingConfigurations,
-                                                                   ConfigurationContext context) {
+                                                                   @NotNull List<RunnerAndConfigurationSettings> existingConfigurations) {
         for (RunnerAndConfigurationSettings existingConfiguration : existingConfigurations) {
             final RunConfiguration configuration = existingConfiguration.getConfiguration();
 

@@ -1,18 +1,20 @@
 package ro.redeul.google.go.lang.psi.impl.types.struct;
 
-import javax.swing.*;
-
 import com.intellij.lang.ASTNode;
 import com.intellij.navigation.ItemPresentation;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
+import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import ro.redeul.google.go.GoIcons;
+import ro.redeul.google.go.lang.parser.GoElementTypes;
 import ro.redeul.google.go.lang.psi.GoFile;
 import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralIdentifier;
 import ro.redeul.google.go.lang.psi.impl.GoPsiElementBase;
 import ro.redeul.google.go.lang.psi.types.GoPsiType;
 import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructField;
 import ro.redeul.google.go.lang.psi.visitors.GoElementVisitor;
+
+import javax.swing.*;
 
 /**
  * Author: Toader Mihai Claudiu <mtoader@gmail.com>
@@ -36,6 +38,12 @@ public class GoTypeStructFieldImpl extends GoPsiElementBase implements GoTypeStr
     @Override
     public GoLiteralIdentifier[] getIdentifiers() {
         return findChildrenByClass(GoLiteralIdentifier.class);
+    }
+
+    @Override
+    public GoPsiElementBase getTag() {
+        PsiElement child = findChildByType(GoElementTypes.IDENTIFIER);
+        return (GoPsiElementBase) child;
     }
 
     @Override

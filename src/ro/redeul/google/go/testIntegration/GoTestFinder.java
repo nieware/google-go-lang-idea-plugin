@@ -1,10 +1,8 @@
 package ro.redeul.google.go.testIntegration;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
 import com.intellij.testIntegration.TestFinder;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,13 +11,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static ro.redeul.google.go.testIntegration.TestUtil.getPsiFile;
-import static ro.redeul.google.go.testIntegration.TestUtil.getTestFileName;
-import static ro.redeul.google.go.testIntegration.TestUtil.isTestFile;
+import static ro.redeul.google.go.testIntegration.TestUtil.*;
 
 public class GoTestFinder implements TestFinder {
 
-    public static final int TEST_SUFFIX_LENGTH = "_test.go".length();
+    private static final int TEST_SUFFIX_LENGTH = "_test.go".length();
 
     @Override
     public PsiElement findSourceElement(@NotNull PsiElement from) {

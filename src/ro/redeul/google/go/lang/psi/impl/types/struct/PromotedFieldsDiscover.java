@@ -1,13 +1,5 @@
 package ro.redeul.google.go.lang.psi.impl.types.struct;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralIdentifier;
 import ro.redeul.google.go.lang.psi.types.GoPsiTypeStruct;
 import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructAnonymousField;
@@ -16,18 +8,20 @@ import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructPromotedFields;
 import ro.redeul.google.go.lang.psi.typing.GoTypeStruct;
 import ro.redeul.google.go.lang.psi.typing.GoTypes;
 
-public class PromotedFieldsDiscover {
-    Map<String, List<GoLiteralIdentifier>> namedFieldsMap = new HashMap<String, List<GoLiteralIdentifier>>();
-    Map<String, List<GoTypeStructAnonymousField>> anonymousFieldsMap = new HashMap<String, List<GoTypeStructAnonymousField>>();
+import java.util.*;
 
-    GoPsiTypeStruct struct;
-    Set<String> ignoreNames;
+public class PromotedFieldsDiscover {
+    private final Map<String, List<GoLiteralIdentifier>> namedFieldsMap = new HashMap<String, List<GoLiteralIdentifier>>();
+    private final Map<String, List<GoTypeStructAnonymousField>> anonymousFieldsMap = new HashMap<String, List<GoTypeStructAnonymousField>>();
+
+    private final GoPsiTypeStruct struct;
+    private final Set<String> ignoreNames;
 
     public PromotedFieldsDiscover(GoPsiTypeStruct struct) {
         this(struct, Collections.<String>emptySet());
     }
 
-    public PromotedFieldsDiscover(GoPsiTypeStruct struct, Set<String> ignoreNames) {
+    private PromotedFieldsDiscover(GoPsiTypeStruct struct, Set<String> ignoreNames) {
         this.struct = struct;
         this.ignoreNames = new HashSet<String>(ignoreNames);
         this.ignoreNames.addAll(getDirectFieldNameSet());

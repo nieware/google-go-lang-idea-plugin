@@ -9,7 +9,7 @@ import ro.redeul.google.go.lang.psi.resolve.GoResolveResult;
 import ro.redeul.google.go.lang.psi.resolve.ShortVarDeclarationResolver;
 import ro.redeul.google.go.lang.psi.statements.GoShortVarDeclaration;
 
-import static com.intellij.patterns.PsiJavaPatterns.psiElement;
+import static com.intellij.patterns.PlatformPatterns.psiElement;
 
 /**
  * ShortVarDeclarationReference is a reference of identifier defined in short variable declaration.
@@ -27,10 +27,10 @@ public class ShortVarDeclarationReference
                             psiElement(GoShortVarDeclaration.class)
                     );
 
-    private static ResolveCache.AbstractResolver<ShortVarDeclarationReference, GoResolveResult> RESOLVER =
+    private static final ResolveCache.AbstractResolver<ShortVarDeclarationReference, GoResolveResult> RESOLVER =
             new ResolveCache.AbstractResolver<ShortVarDeclarationReference, GoResolveResult>() {
                 @Override
-                public GoResolveResult resolve(ShortVarDeclarationReference reference, boolean incompleteCode) {
+                public GoResolveResult resolve(@NotNull ShortVarDeclarationReference reference, boolean incompleteCode) {
                     GoLiteralIdentifier element = reference.getElement();
                     PsiElement parent = element.getParent();
                     if (!(parent instanceof GoShortVarDeclaration)) {
@@ -42,7 +42,7 @@ public class ShortVarDeclarationReference
                     if (resolve == null) {
                         return GoResolveResult.NULL;
                     }
-                    return new GoResolveResult(resolve);
+                    return GoResolveResult.fromElement(resolve);
                 }
             };
 

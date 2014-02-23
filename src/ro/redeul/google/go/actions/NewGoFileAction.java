@@ -1,41 +1,39 @@
 package ro.redeul.google.go.actions;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import com.intellij.facet.FacetManager;
 import com.intellij.ide.actions.CreateFileFromTemplateDialog;
 import com.intellij.ide.actions.CreateTemplateInPackageAction;
-import com.intellij.openapi.actionSystem.DataContext;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 import ro.redeul.google.go.GoBundle;
 import ro.redeul.google.go.GoIcons;
-import ro.redeul.google.go.config.facet.GoFacetType;
 import ro.redeul.google.go.lang.psi.GoFile;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author Mihai Claudiu Toader <mtoader@gmail.com>
  *         Date: Jun 2, 2012
  */
-public class NewGoFileAction extends CreateTemplateInPackageAction<GoFile>
+public class NewGoFileAction extends CreateTemplateInPackageAction<PsiElement>
     implements DumbAware {
 
     public NewGoFileAction() {
         super(GoBundle.message("new.go.file"),
               GoBundle.message("new.go.file.description"),
-              GoIcons.GO_ICON_16x16, true);
+              GoIcons.GO_ICON_16x16, JavaModuleSourceRootTypes.SOURCES);
     }
 
     @Override
-    protected PsiElement getNavigationElement(@NotNull GoFile file) {
+    protected PsiElement getNavigationElement(@NotNull PsiElement file) {
         return file;
     }
 
@@ -47,19 +45,6 @@ public class NewGoFileAction extends CreateTemplateInPackageAction<GoFile>
     //    @Override
     protected boolean checkPackageExists(PsiDirectory directory) {
         return true;
-    }
-
-    @Override
-    protected boolean isAvailable(DataContext dataContext) {
-//        return super.isAvailable(dataContext)
-//                && hasGoFacet(DataKeys.MODULE.getData(dataContext));
-        return super.isAvailable(dataContext);
-    }
-
-    private boolean hasGoFacet(Module module) {
-        return FacetManager.getInstance(module)
-                           .getFacetByType(
-                               GoFacetType.GO_FACET_TYPE_ID) != null;
     }
 
     protected void doCheckCreate(PsiDirectory dir, String parameterName,
@@ -78,9 +63,8 @@ public class NewGoFileAction extends CreateTemplateInPackageAction<GoFile>
     }
 
     @Override
-    protected GoFile doCreate(PsiDirectory dir, String parameterName,
-                              String typeName)
-        throws IncorrectOperationException {
+    protected PsiElement doCreate(PsiDirectory dir, String parameterName, String typeName)
+            throws IncorrectOperationException {
         GoTemplatesFactory.Template template = GoTemplatesFactory.Template.GoFile;
 
         String fileName = fileNameFromTypeName(typeName, parameterName);
@@ -96,8 +80,7 @@ public class NewGoFileAction extends CreateTemplateInPackageAction<GoFile>
             fileName = fileName.replaceFirst(parameterName + "/", "");
         }
 
-        return GoTemplatesFactory.createFromTemplate(dir, packageName, fileName,
-                                                     template);
+        return GoTemplatesFactory.createFromTemplate(dir, packageName, fileName, template);
     }
 
     String fileNameFromTypeName(String typeName, String parameterName) {
@@ -118,7 +101,7 @@ public class NewGoFileAction extends CreateTemplateInPackageAction<GoFile>
             return typeName.replaceFirst("^lib\\.", "");
         }
 
-        return parameterName;
+        return StringUtil.getPackageName(parameterName, '.');
     }
 
     //    @Override
@@ -139,20 +122,12 @@ public class NewGoFileAction extends CreateTemplateInPackageAction<GoFile>
             }
         }
 
-        builder.addKind("New file", GoIcons.GO_ICON_16x16, "single");
+        builder.addKind("New file", GoIcons.GO_ICON_16x16, "single.go");
 
         for (String packageName : packages) {
             builder.addKind("New file in library: " + packageName,
                             GoIcons.GO_ICON_16x16, "lib." + packageName);
         }
-    }
-
-    private boolean isLibraryFolder(PsiDirectory directory) {
-        return false;
-    }
-
-    private boolean isApplicationFolder(PsiDirectory directory) {
-        return false;
     }
 
     @Override

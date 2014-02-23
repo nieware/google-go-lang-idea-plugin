@@ -11,7 +11,6 @@ import ro.redeul.google.go.lang.lexer.GoLexer;
 import ro.redeul.google.go.lang.lexer.GoTokenTypeSets;
 import ro.redeul.google.go.lang.lexer.GoTokenTypes;
 import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralIdentifier;
-import ro.redeul.google.go.lang.psi.toplevel.GoFunctionDeclaration;
 import ro.redeul.google.go.lang.psi.toplevel.GoTypeNameDeclaration;
 
 /**
@@ -56,7 +55,11 @@ public class GoFindUsagesProvider implements FindUsagesProvider {
     @NotNull
     public String getDescriptiveName(@NotNull PsiElement element) {
         if ( element instanceof PsiNamedElement ) {
-            return ((PsiNamedElement)element).getName();
+            String elementName = ((PsiNamedElement)element).getName();
+            if (elementName == null) {
+                return element.toString();
+            }
+            return elementName;
         }
         return element.toString();
     }

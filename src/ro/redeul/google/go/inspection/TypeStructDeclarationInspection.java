@@ -1,10 +1,5 @@
 package ro.redeul.google.go.inspection;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiReference;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import ro.redeul.google.go.GoBundle;
@@ -18,6 +13,9 @@ import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructAnonymousField;
 import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructField;
 import ro.redeul.google.go.lang.psi.visitors.GoRecursiveElementVisitor;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.resolveTypeSpec;
 
 public class TypeStructDeclarationInspection
@@ -30,7 +28,7 @@ public class TypeStructDeclarationInspection
     }
 
     @Override
-    protected void doCheckFile(@NotNull GoFile file, @NotNull final InspectionResult result, boolean isOnTheFly) {
+    protected void doCheckFile(@NotNull GoFile file, @NotNull final InspectionResult result) {
         new GoRecursiveElementVisitor() {
             @Override
             public void visitStructType(GoPsiTypeStruct type) {

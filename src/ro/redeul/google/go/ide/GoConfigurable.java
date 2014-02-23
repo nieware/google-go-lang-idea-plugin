@@ -1,29 +1,21 @@
 package ro.redeul.google.go.ide;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import javax.swing.*;
-
-import com.intellij.openapi.compiler.Compiler;
-import com.intellij.openapi.compiler.CompilerManager;
-import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import ro.redeul.google.go.GoFileType;
-import ro.redeul.google.go.GoIcons;
-import ro.redeul.google.go.compilation.GoInstallCompiler;
-import ro.redeul.google.go.compilation.GoCompiler;
-import ro.redeul.google.go.compilation.GoMakefileCompiler;
 import ro.redeul.google.go.options.GoSettings;
+
+import javax.swing.*;
+
+import static ro.redeul.google.go.GoIcons.GO_ICON_16x16;
 
 public class GoConfigurable implements SearchableConfigurable {
 
-    GoConfigurableForm form;
+    private GoConfigurableForm form;
 
-    Project project;
+    private final Project project;
 
     public GoConfigurable(Project project) {
         this.project = project;
@@ -43,11 +35,11 @@ public class GoConfigurable implements SearchableConfigurable {
     @Nls
     @Override
     public String getDisplayName() {
-        return "Go Settings";
+        return "Google Go";
     }
 
     public Icon getIcon() {
-        return GoIcons.GO_ICON_16x16;
+        return GO_ICON_16x16;
     }
 
     @Override
@@ -79,45 +71,6 @@ public class GoConfigurable implements SearchableConfigurable {
             form.apply(projectSettings, settings);
             GoSettings.getInstance().loadState(settings);
             getProjectSettings().loadState(projectSettings);
-            applyCompilerSettings(projectSettings);
-        }
-    }
-
-    private void applyCompilerSettings(GoProjectSettings.GoProjectSettingsBean bean) {
-        // Remove current GoCompilers and add the currently configured
-        CompilerManager compilerManager = CompilerManager.getInstance(project);
-        Compiler[] compilers = compilerManager.getCompilers(GoCompiler.class);
-        for (Compiler compiler : compilers) {
-            compilerManager.removeCompiler(compiler);
-        }
-        compilers = compilerManager.getCompilers(GoMakefileCompiler.class);
-        for (Compiler compiler : compilers) {
-            compilerManager.removeCompiler(compiler);
-        }
-        compilers = compilerManager.getCompilers(GoInstallCompiler.class);
-        for (Compiler compiler : compilers) {
-            compilerManager.removeCompiler(compiler);
-        }
-
-        switch (bean.BUILD_SYSTEM_TYPE) {
-        case Internal:
-            compilerManager.addTranslatingCompiler(
-                    new GoCompiler(project),
-                    new HashSet<FileType>(Arrays.asList(GoFileType.INSTANCE)),
-                    new HashSet<FileType>(Arrays.asList(FileType.EMPTY_ARRAY)));
-
-            break;
-        case Makefile:
-            compilerManager.addTranslatingCompiler(
-                    new GoMakefileCompiler(project),
-                    new HashSet<FileType>(Arrays.asList(GoFileType.INSTANCE)),
-                    new HashSet<FileType>(Arrays.asList(FileType.EMPTY_ARRAY)));
-            break;
-        case Install:
-            compilerManager.addTranslatingCompiler(
-                    new GoInstallCompiler(project),
-                    new HashSet<FileType>(Arrays.asList(GoFileType.INSTANCE)),
-                    new HashSet<FileType>(Arrays.asList(FileType.EMPTY_ARRAY)));
         }
     }
 
@@ -134,7 +87,6 @@ public class GoConfigurable implements SearchableConfigurable {
 
     @Override
     public void disposeUIResources() {
-        form.componentPanel = null;
         form = null;
     }
 }

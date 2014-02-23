@@ -12,6 +12,7 @@ func main() {
     a := &A{value:5}
     <caret>a.Print()
 }
+
 -----
 package main
 
@@ -24,5 +25,5 @@ func (a *A) Print() {
 }
 
 func main() {
-    (&A{value:5}).Print()
+	(&A{value:5}).Print()
 }

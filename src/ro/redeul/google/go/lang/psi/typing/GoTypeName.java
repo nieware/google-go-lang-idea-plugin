@@ -5,14 +5,15 @@ import ro.redeul.google.go.lang.psi.toplevel.GoTypeSpec;
 import ro.redeul.google.go.lang.psi.types.GoPsiTypeName;
 import ro.redeul.google.go.lang.psi.types.underlying.GoUnderlyingType;
 import ro.redeul.google.go.lang.psi.types.underlying.GoUnderlyingTypePredeclared;
+
 import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.resolveTypeSpec;
 
 public class GoTypeName extends GoTypePsiBacked<GoPsiTypeName, GoUnderlyingType> implements GoType {
 
     private static final Logger LOG = Logger.getInstance(GoTypeName.class);
 
-    String name;
-    GoType definition;
+    private final String name;
+    private GoType definition;
 
     public GoTypeName(GoPsiTypeName type) {
         super(type);

@@ -28,7 +28,7 @@ import java.util.Set;
 
 import static ro.redeul.google.go.lang.psi.utils.GoPsiUtils.getPrevSiblingIfItsWhiteSpaceOrComment;
 
-public abstract class GoIntroduceHandlerBase implements RefactoringActionHandler {
+abstract class GoIntroduceHandlerBase implements RefactoringActionHandler {
     @Override
     public void invoke(@NotNull final Project project, final Editor editor, PsiFile psiFile, DataContext dataContext) {
         try {
@@ -96,7 +96,7 @@ public abstract class GoIntroduceHandlerBase implements RefactoringActionHandler
 
     protected abstract void doIntroduce(Project project, Editor editor, GoFile file, int start, int end) throws GoRefactoringException;
 
-    protected boolean isExpressionValid(GoExpr expression) {
+    boolean isExpressionValid(GoExpr expression) {
         return expression != null;
     }
 
@@ -105,7 +105,7 @@ public abstract class GoIntroduceHandlerBase implements RefactoringActionHandler
         // invoked from elsewhere (other from editor). do nothing.
     }
 
-    protected List<GoExpr> collectExpressions(PsiFile file, int offset) {
+    List<GoExpr> collectExpressions(PsiFile file, int offset) {
         Set<TextRange> expressionRanges = new HashSet<TextRange>();
         List<GoExpr> expressions = new ArrayList<GoExpr>();
         for (GoExpr expression = PsiTreeUtil.findElementOfClassAtOffset(file, offset, GoExpr.class, false);

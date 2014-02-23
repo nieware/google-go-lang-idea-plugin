@@ -1,17 +1,10 @@
 package ro.redeul.google.go.lang.psi.resolve.references;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
-
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.impl.source.resolve.ResolveCache;
-import com.intellij.psi.scope.util.PsiScopesUtil;
+import ro.redeul.google.go.lang.psi.utils.GoPsiScopesUtil;
 import com.intellij.psi.util.PsiUtilCore;
 import org.jetbrains.annotations.NotNull;
 import ro.redeul.google.go.lang.psi.GoPsiElement;
@@ -20,47 +13,36 @@ import ro.redeul.google.go.lang.psi.expressions.primary.GoSelectorExpression;
 import ro.redeul.google.go.lang.psi.processors.GoResolveStates;
 import ro.redeul.google.go.lang.psi.resolve.GoResolveResult;
 import ro.redeul.google.go.lang.psi.resolve.MethodResolver;
-import ro.redeul.google.go.lang.psi.toplevel.GoMethodDeclaration;
 import ro.redeul.google.go.lang.psi.types.GoPsiType;
-import ro.redeul.google.go.lang.psi.types.GoPsiTypeName;
 import ro.redeul.google.go.lang.psi.types.GoPsiTypePointer;
 import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructAnonymousField;
-import ro.redeul.google.go.lang.psi.typing.GoType;
-import ro.redeul.google.go.lang.psi.typing.GoTypeName;
-import ro.redeul.google.go.lang.psi.typing.GoTypePointer;
-import ro.redeul.google.go.lang.psi.typing.GoTypeStruct;
-import ro.redeul.google.go.lang.psi.typing.GoTypes;
+import ro.redeul.google.go.lang.psi.typing.*;
 import ro.redeul.google.go.util.LookupElementUtil;
-import static ro.redeul.google.go.lang.completion.GoCompletionContributor.DUMMY_IDENTIFIER;
+
+import java.util.*;
 
 public class MethodReference
     extends GoPsiReference.Single<GoSelectorExpression, MethodReference> {
 
-    Set<GoTypeName> receiverTypes;
+    private Set<GoTypeName> receiverTypes;
 
-    private static ResolveCache.AbstractResolver<MethodReference, GoResolveResult> RESOLVER =
-        new ResolveCache.AbstractResolver<MethodReference, GoResolveResult>() {
-            @Override
-            public GoResolveResult resolve(MethodReference methodReference, boolean incompleteCode) {
-                Set<GoTypeName> receiverTypes = methodReference.resolveBaseReceiverTypes();
+    private static final ResolveCache.AbstractResolver<MethodReference, GoResolveResult> RESOLVER =
+            new ResolveCache.AbstractResolver<MethodReference, GoResolveResult>() {
+                @Override
+                public GoResolveResult resolve(@NotNull MethodReference methodReference, boolean incompleteCode) {
+                    MethodResolver processor = new MethodResolver(methodReference);
 
-                MethodResolver processor = new MethodResolver(methodReference);
+                    GoSelectorExpression element = methodReference.getElement();
 
-                GoSelectorExpression element = methodReference.getElement();
+                    GoPsiScopesUtil.treeWalkUp(
+                            processor,
+                            element.getContainingFile().getLastChild(),
+                            element.getContainingFile(),
+                            GoResolveStates.initial());
 
-                PsiScopesUtil.treeWalkUp(
-                    processor,
-                    element.getContainingFile().getLastChild(),
-                    element.getContainingFile(),
-                    GoResolveStates.initial());
-
-                PsiElement declaration = processor.getChildDeclaration();
-
-                return declaration != null
-                    ? new GoResolveResult(declaration)
-                    : GoResolveResult.NULL;
-            }
-        };
+                    return GoResolveResult.fromElement(processor.getChildDeclaration());
+                }
+            };
 
     public MethodReference(@NotNull GoSelectorExpression element) {
         super(element, RESOLVER);
@@ -78,13 +60,13 @@ public class MethodReference
             return TextRange.EMPTY_RANGE;
 
         return new TextRange(identifier.getStartOffsetInParent(),
-                             identifier.getStartOffsetInParent() + identifier.getTextLength());
+                identifier.getStartOffsetInParent() + identifier.getTextLength());
     }
 
     @NotNull
     @Override
     public String getCanonicalText() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return ""; // @TODO replace this with something more meaningful
     }
 
     @Override
@@ -114,7 +96,7 @@ public class MethodReference
             }
         };
 
-        PsiScopesUtil.treeWalkUp(
+        GoPsiScopesUtil.treeWalkUp(
             processor,
             getElement().getContainingFile().getLastChild(),
             getElement().getContainingFile(),

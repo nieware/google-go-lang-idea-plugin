@@ -12,14 +12,7 @@ import ro.redeul.google.go.lang.psi.toplevel.GoFunctionDeclaration;
 import ro.redeul.google.go.lang.psi.toplevel.GoMethodDeclaration;
 import ro.redeul.google.go.lang.psi.toplevel.GoTypeNameDeclaration;
 import ro.redeul.google.go.lang.psi.toplevel.GoTypeSpec;
-import ro.redeul.google.go.lang.psi.types.GoPsiTypeArray;
-import ro.redeul.google.go.lang.psi.types.GoPsiTypeChannel;
-import ro.redeul.google.go.lang.psi.types.GoPsiTypeInterface;
-import ro.redeul.google.go.lang.psi.types.GoPsiTypeMap;
-import ro.redeul.google.go.lang.psi.types.GoPsiTypeName;
-import ro.redeul.google.go.lang.psi.types.GoPsiTypePointer;
-import ro.redeul.google.go.lang.psi.types.GoPsiTypeSlice;
-import ro.redeul.google.go.lang.psi.types.GoPsiTypeStruct;
+import ro.redeul.google.go.lang.psi.types.*;
 import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructAnonymousField;
 import ro.redeul.google.go.lang.psi.types.struct.GoTypeStructField;
 import ro.redeul.google.go.lang.psi.visitors.GoElementVisitor;
@@ -28,7 +21,7 @@ public class LookupElementUtil extends GoElementVisitor {
 
     private LookupElementBuilder lookupElement;
 
-    public LookupElementUtil(LookupElementBuilder lookupElement) {
+    private LookupElementUtil(LookupElementBuilder lookupElement) {
         this.lookupElement = lookupElement;
     }
 
@@ -61,7 +54,8 @@ public class LookupElementUtil extends GoElementVisitor {
 
     @Override
     public void visitTypeSpec(GoTypeSpec type) {
-        type.getType().accept(this);
+        if (type.getType() != null)
+            type.getType().accept(this);
     }
 
     @Override
@@ -143,7 +137,7 @@ public class LookupElementUtil extends GoElementVisitor {
         lookupElement = lookupElement.withIcon(PlatformIcons.FIELD_ICON);
     }
 
-    public LookupElementBuilder getLookupElement() {
+    LookupElementBuilder getLookupElement() {
         return lookupElement;
     }
 }

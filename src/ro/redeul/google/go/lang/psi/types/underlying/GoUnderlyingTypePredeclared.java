@@ -1,14 +1,14 @@
 package ro.redeul.google.go.lang.psi.types.underlying;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.jetbrains.annotations.Nullable;
 import ro.redeul.google.go.lang.psi.typing.GoTypes;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class GoUnderlyingTypePredeclared implements GoUnderlyingType {
 
-    static Map<String, GoUnderlyingTypePredeclared> predeclaredTypes =
+    private static final Map<String, GoUnderlyingTypePredeclared> predeclaredTypes =
         new HashMap<String, GoUnderlyingTypePredeclared>();
 
     static {
@@ -20,7 +20,7 @@ public class GoUnderlyingTypePredeclared implements GoUnderlyingType {
         }
     }
 
-    private GoTypes.Builtin type;
+    private final GoTypes.Builtin type;
 
     private GoUnderlyingTypePredeclared(GoTypes.Builtin type) {
         this.type = type;

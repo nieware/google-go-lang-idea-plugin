@@ -1,11 +1,5 @@
 package ro.redeul.google.go.lang.psi.processors;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import javax.swing.*;
-
 import com.intellij.codeInsight.completion.InsertHandler;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
@@ -14,6 +8,7 @@ import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.ResolveState;
 import com.intellij.psi.scope.BaseScopeProcessor;
 import com.intellij.util.PlatformIcons;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ro.redeul.google.go.GoIcons;
 import ro.redeul.google.go.lang.completion.insertHandler.FunctionInsertHandler;
@@ -24,23 +19,29 @@ import ro.redeul.google.go.lang.psi.expressions.literals.GoLiteralIdentifier;
 import ro.redeul.google.go.lang.psi.toplevel.GoFunctionDeclaration;
 import ro.redeul.google.go.lang.psi.toplevel.GoMethodDeclaration;
 
+import javax.swing.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * Author: Toader Mihai Claudiu <mtoader@gmail.com>
  * <p/>
  * Date: 5/22/11
  * Time: 8:35 PM
  */
-public class IdentifierVariantsCollector extends BaseScopeProcessor{
+class IdentifierVariantsCollector extends BaseScopeProcessor{
 
-    static final String builtInFunctions[] = {
+    private static final String[] builtInFunctions = {
             "append", "cap", "close", "complex", "copy", "imag", "len", "make", "new", "panic", "print", "println", "real", "recover"
     };
 
-    List<LookupElement> variants = new ArrayList<LookupElement>();
-    Set<String> names = new HashSet<String>();
+    private final List<LookupElement> variants = new ArrayList<LookupElement>();
+    private final Set<String> names = new HashSet<String>();
 
     @Override
-    public boolean execute(PsiElement element, ResolveState state) {
+    public boolean execute(@NotNull PsiElement element, ResolveState state) {
 
         if ( element instanceof GoFunctionDeclaration && ! (element instanceof GoMethodDeclaration) ) {
             collectFunctionName((GoFunctionDeclaration) element, state);
@@ -64,7 +65,7 @@ public class IdentifierVariantsCollector extends BaseScopeProcessor{
 
         GoLiteralIdentifier identifiers[] = declaration.getIdentifiers();
 
-        boolean isImported = isImported(declaration, state);
+        boolean isImported = isImported(state);
 
         for (GoLiteralIdentifier identifier : identifiers) {
             if ( ! isImported || GoNamesUtil.isPublicType(identifier.getName()) ) {
@@ -77,7 +78,7 @@ public class IdentifierVariantsCollector extends BaseScopeProcessor{
 
         GoLiteralIdentifier identifiers[] = declaration.getIdentifiers();
 
-        boolean isImported = isImported(declaration, state);
+        boolean isImported = isImported(state);
 
         for (GoLiteralIdentifier identifier : identifiers) {
             if ( ! isImported || GoNamesUtil.isPublicType(identifier.getName()) ) {
@@ -96,13 +97,13 @@ public class IdentifierVariantsCollector extends BaseScopeProcessor{
             return;
         }
 
-        if ( ! isImported(function, state) || GoNamesUtil.isPublicType(function.getFunctionName()) ) {
+        if ( ! isImported(state) || GoNamesUtil.isPublicType(function.getFunctionName()) ) {
             String text = DocumentUtil.getFunctionPresentationText(function);
             addVariant(function, text, state, PlatformIcons.FUNCTION_ICON, new FunctionInsertHandler());
         }
     }
 
-    private boolean isImported(PsiElement target, ResolveState state) {
+    private boolean isImported(ResolveState state) {
         return !(state.get(GoResolveStates.IsOriginalFile) || state.get(GoResolveStates.IsOriginalPackage));
     }
 
@@ -112,7 +113,7 @@ public class IdentifierVariantsCollector extends BaseScopeProcessor{
 
     private void addVariant(PsiNamedElement target, String presentableText, ResolveState state, Icon icon,
                             @Nullable InsertHandler<LookupElement> insertHandler) {
-        boolean isImported = isImported(target, state);
+        boolean isImported = isImported(state);
 
         String visiblePackageName = state.get(GoResolveStates.VisiblePackageName);
 
